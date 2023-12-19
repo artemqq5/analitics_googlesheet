@@ -1,12 +1,20 @@
 import os
 import pickle
 from datetime import datetime
+import schedule
+import time
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from config.cfg import *
 
 from database import MyDataBase
+
+orders = "Orders!A1"
+users = "Users!A1"
+accounts = "Account_items!A1"
+accounts_orders = "Account_orders!A1"
+creo_orders = "Creo_orders!A1"
 
 
 def update_google_sheets_(data, range_name):
@@ -73,16 +81,18 @@ def format_data_for_sheets(data):
     return formatted_data
 
 
-if __name__ == '__main__':
-    orders = "Orders!A1"
-    users = "Users!A1"
-    accounts = "Accounts!A1"
-    accounts_orders = "Accounts_orders!A1"
-    creo_orders = "Creo_orders!A1"
-
+def update_all_data():
     update_google_sheets_(format_data_for_sheets(MyDataBase().get_orders_data()), orders)
     update_google_sheets_(format_data_for_sheets(MyDataBase().get_users_data()), users)
     update_google_sheets_(format_data_for_sheets(MyDataBase().get_accounts_data()), accounts)
     update_google_sheets_(format_data_for_sheets(MyDataBase().get_accounts_orders_data()), accounts_orders)
     update_google_sheets_(format_data_for_sheets(MyDataBase().get_creo_orders_data()), creo_orders)
+
+
+if __name__ == '__main__':
+    schedule.every().hour.do(update_all_data)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 
