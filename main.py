@@ -43,7 +43,7 @@ def update_google_sheets_(data, range_name):
 
     # Опції для запису
     body = {
-        'values': [f"last updated: {datetime.now()}"] + values
+        'values': [[f"last updated: {datetime.now()}"]] + values
     }
 
     # # Виконання запису
