@@ -43,7 +43,7 @@ def update_google_sheets_(data, range_name):
 
     # Опції для запису
     body = {
-        'values': values
+        'values': [f"last updated: {datetime.now()}"] + values
     }
 
     # # Виконання запису
@@ -54,7 +54,7 @@ def update_google_sheets_(data, range_name):
         body=body
     ).execute()
 
-    print(f"Updated {sheet.get('updatedCells')} cells.")
+    print(f"Updated {sheet.get('updatedCells')} cells at {datetime.now()}")
 
 
 def format_data_for_sheets(data):
@@ -65,7 +65,7 @@ def format_data_for_sheets(data):
     headers = list(data[0].keys())
 
     # Додаємо заголовки як перший рядок
-    formatted_data = [[f"last updated: {datetime.now()}"], headers]
+    formatted_data = [headers]
 
     # Додаємо дані
     for row in data:
