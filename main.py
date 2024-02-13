@@ -90,7 +90,7 @@ def update_all_data():
 
 
 if __name__ == '__main__':
-    schedule.every().minute.do(update_all_data)
+    schedule.every().hour.do(update_all_data)
 
     while True:
         schedule.run_pending()
