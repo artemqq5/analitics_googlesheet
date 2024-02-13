@@ -65,7 +65,7 @@ def format_data_for_sheets(data):
     headers = list(data[0].keys())
 
     # Додаємо заголовки як перший рядок
-    formatted_data = [headers]
+    formatted_data = [[f"last updated: {datetime.now()}"], [headers]]
 
     # Додаємо дані
     for row in data:
@@ -90,7 +90,7 @@ def update_all_data():
 
 
 if __name__ == '__main__':
-    schedule.every().hour.do(update_all_data)
+    schedule.every().minute.do(update_all_data)
 
     while True:
         schedule.run_pending()
