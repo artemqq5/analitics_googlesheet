@@ -43,9 +43,9 @@ def update_google_sheets_(data, range_name):
 
     # Опції для запису
     body = {
-        'values': values
+        'values': [[f"last updated: {datetime.now()}"]] + values
     }
-    # [[f"last updated: {datetime.now()}"]] + 
+
     # # Виконання запису
     sheet = service.spreadsheets().values().update(
         spreadsheetId=SPREADSHEET_ID,
