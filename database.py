@@ -19,7 +19,7 @@ class MyDataBase:
         try:
             with self.connection as connection:
                 with connection.cursor() as cursor:
-                    _command = '''SELECT * FROM `orders` ORDER BY DESC;'''
+                    _command = '''SELECT * FROM `orders` ORDER BY `date` DESC;'''
                     cursor.execute(_command)
                 return cursor.fetchall()
         except Exception as e:
@@ -30,7 +30,7 @@ class MyDataBase:
         try:
             with self.connection as connection:
                 with connection.cursor() as cursor:
-                    _command = '''SELECT * FROM `users` ORDER BY DESC;'''
+                    _command = '''SELECT * FROM `users`ORDER BY `time` DESC;'''
                     cursor.execute(_command)
                 return cursor.fetchall()
         except Exception as e:
