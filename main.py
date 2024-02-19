@@ -74,7 +74,7 @@ def format_data_for_sheets(data):
             value = row[key]
             # Якщо значення є datetime, перетворюємо його у строку
             if isinstance(value, datetime):
-                value = value.strftime("%Y-%m-%d %H:%M:%S")
+                value = value.strftime("%Y-%m-%d %H:%M")
             formatted_row.append(value)
         formatted_data.append(formatted_row)
 
