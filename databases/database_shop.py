@@ -3,7 +3,7 @@ import pymysql
 from config.cfg import DB_PASSWORD
 
 
-class MyDataBase:
+class MyDataBaseShop:
 
     def __init__(self):
         self.connection = pymysql.connect(
@@ -30,7 +30,7 @@ class MyDataBase:
         try:
             with self.connection as connection:
                 with connection.cursor() as cursor:
-                    _command = '''SELECT * FROM `users`ORDER BY `time` DESC;'''
+                    _command = '''SELECT * FROM `users` ORDER BY `time` DESC;'''
                     cursor.execute(_command)
                 return cursor.fetchall()
         except Exception as e:

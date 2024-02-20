@@ -7,17 +7,30 @@ import time
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from config.cfg import *
+from databases.database_info import MyDataBaseInfo
 
-from database import MyDataBase
+from databases.database_shop import MyDataBaseShop
 
+# mt shop
 orders = "Orders!A1"
 users = "Users!A1"
 accounts = "Account_items!A1"
 accounts_orders = "Account_orders!A1"
 creo_orders = "Creo_orders!A1"
 
+# mt team info
+chats_creo = "ChatsCreo!A1"
+chats_google = "ChatsGoogle!A1"
+chats_fb = "ChatsFB!A1"
+chats_console = "ChatsConsole!A1"
+chats_agency = "ChatsAgency!A1"
+chats_apps = "ChatsApps!A1"
+chats_pp_web = "ChatsPartnersWeb!A1"
+chats_pp_ads = "ChatsPartnersADS!A1"
+chats_media = "ChatsMedia!A1"
 
-def update_google_sheets_(data, range_name):
+
+def update_google_sheets_(data, range_name, table_id):
 
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -48,7 +61,7 @@ def update_google_sheets_(data, range_name):
 
     # # Виконання запису
     sheet = service.spreadsheets().values().update(
-        spreadsheetId=SPREADSHEET_ID,
+        spreadsheetId=table_id,
         range=range_name,
         valueInputOption='RAW',
         body=body
@@ -82,11 +95,15 @@ def format_data_for_sheets(data):
 
 
 def update_all_data():
-    update_google_sheets_(format_data_for_sheets(MyDataBase().get_orders_data()), orders)
-    update_google_sheets_(format_data_for_sheets(MyDataBase().get_users_data()), users)
-    update_google_sheets_(format_data_for_sheets(MyDataBase().get_accounts_data()), accounts)
-    update_google_sheets_(format_data_for_sheets(MyDataBase().get_accounts_orders_data()), accounts_orders)
-    update_google_sheets_(format_data_for_sheets(MyDataBase().get_creo_orders_data()), creo_orders)
+    # update mt shop analitycs
+    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_orders_data()), orders, SPREADSHEET_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_users_data()), users, SPREADSHEET_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_accounts_data()), accounts, SPREADSHEET_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_accounts_orders_data()), accounts_orders, SPREADSHEET_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_creo_orders_data()), creo_orders, SPREADSHEET_ID)
+
+    # update mt team info analitycs
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_creo_data()), chats_creo, SPREADSHEET_INFO_ID)
 
 
 if __name__ == '__main__':
