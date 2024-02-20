@@ -30,11 +30,11 @@ class MyDataBaseInfo:
         try:
             with self.connection as connection:
                 with connection.cursor() as cursor:
-                    _command = '''SELECT * FROM `chats` WHERE `googel` = 1 ORDER BY `time` DESC;'''
+                    _command = '''SELECT * FROM `chats` WHERE `google` = 1 ORDER BY `time` DESC;'''
                     cursor.execute(_command)
                 return cursor.fetchall()
         except Exception as e:
-            print(f"get_chats_googel_data: {e}")
+            print(f"get_chats_google_data: {e}")
             return None
 
     def get_chats_fb_data(self):
