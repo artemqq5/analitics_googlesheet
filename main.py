@@ -104,6 +104,14 @@ def update_all_data():
 
     # update mt team info analitycs
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_creo_data()), chats_creo, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_google_data()), chats_google, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_fb_data()), chats_fb, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_console_data()), chats_console, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_agency_data()), chats_agency, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_apps_data()), chats_apps, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_pp_web_data()), chats_pp_web, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_pp_ads_data()), chats_pp_ads, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_media_data()), chats_media, SPREADSHEET_INFO_ID)
 
 
 if __name__ == '__main__':
