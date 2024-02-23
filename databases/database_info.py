@@ -113,3 +113,14 @@ class MyDataBaseInfo:
         except Exception as e:
             print(f"get_chats_media_data: {e}")
             return None
+
+    def get_users_from_info_bot(self):
+        try:
+            with self.connection as connection:
+                with connection.cursor() as cursor:
+                    _command = '''SELECT * FROM `users` ORDER BY `time` DESC;'''
+                    cursor.execute(_command)
+                return cursor.fetchall()
+        except Exception as e:
+            print(f"get_users_from_info_bot: {e}")
+            return None

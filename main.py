@@ -28,6 +28,7 @@ chats_apps = "ChatsApps!A1"
 chats_pp_web = "ChatsPartnersWeb!A1"
 chats_pp_ads = "ChatsPartnersADS!A1"
 chats_media = "ChatsMedia!A1"
+users_info = "Users!A1"
 
 
 def update_google_sheets_(data, range_name, table_id):
@@ -112,6 +113,7 @@ def update_all_data():
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_pp_web_data()), chats_pp_web, SPREADSHEET_INFO_ID)
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_pp_ads_data()), chats_pp_ads, SPREADSHEET_INFO_ID)
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_media_data()), chats_media, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_users_from_info_bot()), users_info, SPREADSHEET_INFO_ID)
 
 
 if __name__ == '__main__':
