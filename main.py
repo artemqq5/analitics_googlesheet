@@ -31,6 +31,15 @@ chats_media = "ChatsMedia!A1"
 users_info = "Users!A1"
 
 
+def clear_range(range_name, table_id, service):
+    clear_body = {}
+    service.spreadsheets().values().clear(
+        spreadsheetId=table_id,
+        range=range_name,
+        body=clear_body
+    ).execute()
+
+
 def update_google_sheets_(data, range_name, table_id):
 
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
@@ -53,6 +62,7 @@ def update_google_sheets_(data, range_name, table_id):
 
     service = build('sheets', 'v4', credentials=creds)
 
+    clear_range(range_name, table_id, service)
     values = [list(row) for row in data]
 
     # Опції для запису
