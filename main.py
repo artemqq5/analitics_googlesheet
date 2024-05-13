@@ -32,11 +32,10 @@ users_info = "Users!A1"
 
 
 def clear_range(range_name, table_id, service):
-    clear_body = {""}
     service.spreadsheets().values().clear(
         spreadsheetId=table_id,
-        range=range_name,
-        body=clear_body
+        range=range_name.replace("!A1", ""),
+        body={}
     ).execute()
 
 
