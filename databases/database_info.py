@@ -59,11 +59,22 @@ class MyDataBaseInfo:
             print(f"get_chats_console_data: {e}")
             return None
 
-    def get_chats_agency_data(self):
+    def get_chats_agency_fb_data(self):
         try:
             with self.connection as connection:
                 with connection.cursor() as cursor:
-                    _command = '''SELECT * FROM `chats` WHERE `agency` = 1 ORDER BY `time` DESC;'''
+                    _command = '''SELECT * FROM `chats` WHERE `agency_fb` = 1 ORDER BY `time` DESC;'''
+                    cursor.execute(_command)
+                return cursor.fetchall()
+        except Exception as e:
+            print(f"get_chats_agency_data: {e}")
+            return None
+
+    def get_chats_agency_google_data(self):
+        try:
+            with self.connection as connection:
+                with connection.cursor() as cursor:
+                    _command = '''SELECT * FROM `chats` WHERE `agency_google` = 1 ORDER BY `time` DESC;'''
                     cursor.execute(_command)
                 return cursor.fetchall()
         except Exception as e:
