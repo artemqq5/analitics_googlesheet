@@ -23,7 +23,8 @@ chats_creo = "ChatsCreo!A1"
 chats_google = "ChatsGoogle!A1"
 chats_fb = "ChatsFB!A1"
 chats_console = "ChatsConsole!A1"
-chats_agency = "ChatsAgency!A1"
+chats_agency_fb = "ChatsAgencyFB!A1"
+chats_agency_google = "ChatsAgencyGoogle!A1"
 chats_apps = "ChatsApps!A1"
 chats_pp_web = "ChatsPartnersWeb!A1"
 chats_pp_ads = "ChatsPartnersADS!A1"
@@ -117,8 +118,8 @@ def update_all_data():
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_google_data()), chats_google, SPREADSHEET_INFO_ID)
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_fb_data()), chats_fb, SPREADSHEET_INFO_ID)
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_console_data()), chats_console, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_agency_fb_data()), chats_agency, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_agency_google_data()), chats_agency, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_agency_fb_data()), chats_agency_fb, SPREADSHEET_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_agency_google_data()), chats_agency_google, SPREADSHEET_INFO_ID)
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_apps_data()), chats_apps, SPREADSHEET_INFO_ID)
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_pp_web_data()), chats_pp_web, SPREADSHEET_INFO_ID)
     update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_pp_ads_data()), chats_pp_ads, SPREADSHEET_INFO_ID)
@@ -128,7 +129,7 @@ def update_all_data():
 
 if __name__ == '__main__':
     update_all_data()
-    
+
     # schedule.every().day.do(update_all_data)
     #
     # while True:
