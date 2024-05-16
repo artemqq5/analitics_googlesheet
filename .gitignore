@@ -2,6 +2,6 @@
 .idea/
 __pycache__/
 venv/
-config/private_cfg.py
+private_cfg.py
 token.pickle
 credential.json

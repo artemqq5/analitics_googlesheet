@@ -1,15 +1,15 @@
 import os
 import pickle
 from datetime import datetime
-import schedule
-import time
 
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from config.cfg import *
-from databases.database_info import MyDataBaseInfo
 
-from databases.database_shop import MyDataBaseShop
+from databases.repository.ShopRp import ShopRp
+from databases.repository.TeamInfoMessagingRp import TeamInfoMessagingRp
+
+
+from private_cfg import *
 
 # mt shop
 orders = "Orders!A1"
@@ -106,25 +106,27 @@ def format_data_for_sheets(data):
 
 
 def update_all_data():
-    # update mt shop analitycs
-    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_orders_data()), orders, SPREADSHEET_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_users_data()), users, SPREADSHEET_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_accounts_data()), accounts, SPREADSHEET_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_accounts_orders_data()), accounts_orders, SPREADSHEET_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseShop().get_creo_orders_data()), creo_orders, SPREADSHEET_ID)
+    # update mt shop
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_orders_data()), orders, SPREADSHEET_SHOP_ID)
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_users_data()), users, SPREADSHEET_SHOP_ID)
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_accounts_data()), accounts, SPREADSHEET_SHOP_ID)
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_accounts_orders_data()), accounts_orders, SPREADSHEET_SHOP_ID)
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_creo_orders_data()), creo_orders, SPREADSHEET_SHOP_ID)
 
-    # update mt team info analitycs
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_creo_data()), chats_creo, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_google_data()), chats_google, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_fb_data()), chats_fb, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_console_data()), chats_console, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_agency_fb_data()), chats_agency_fb, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_agency_google_data()), chats_agency_google, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_apps_data()), chats_apps, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_pp_web_data()), chats_pp_web, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_pp_ads_data()), chats_pp_ads, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_chats_media_data()), chats_media, SPREADSHEET_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(MyDataBaseInfo().get_users_from_info_bot()), users_info, SPREADSHEET_INFO_ID)
+    # update mt team info
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('creo')), chats_creo, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('googel')), chats_google, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('fb')), chats_fb, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('console')), chats_console, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('agency_fb')), chats_agency_fb, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('agency_google')), chats_agency_google, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('apps')), chats_apps, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('pp_web')), chats_pp_web, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('pp_ads')), chats_pp_ads, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('media')), chats_media, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_users_from_info_bot()), users_info, SPREADSHEET_TEAM_INFO_ID)
+
+    # update auto moderator
 
 
 if __name__ == '__main__':
