@@ -115,7 +115,7 @@ def update_all_data():
 
     # update mt team info
     update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('creo')), chats_creo, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('googel')), chats_google, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('google')), chats_google, SPREADSHEET_TEAM_INFO_ID)
     update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('fb')), chats_fb, SPREADSHEET_TEAM_INFO_ID)
     update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('console')), chats_console, SPREADSHEET_TEAM_INFO_ID)
     update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('agency_fb')), chats_agency_fb, SPREADSHEET_TEAM_INFO_ID)
