@@ -16,3 +16,6 @@ class AutoModeratorRp(DefaultDataBase):
         )
         super().__init__(connection=self.con_moderator)
 
+    def get_all_users(self):
+        _command = "SELECT * FROM `users`;"
+        return self._select(_command)

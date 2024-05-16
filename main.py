@@ -5,6 +5,7 @@ from datetime import datetime
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+from databases.repository.AutoModeratorRp import AutoModeratorRp
 from databases.repository.ShopRp import ShopRp
 from databases.repository.TeamInfoMessagingRp import TeamInfoMessagingRp
 
@@ -30,6 +31,9 @@ chats_pp_web = "ChatsPartnersWeb!A1"
 chats_pp_ads = "ChatsPartnersADS!A1"
 chats_media = "ChatsMedia!A1"
 users_info = "Users!A1"
+
+# mt auto moderator
+users_auto_moder = "Users!A1"
 
 
 def clear_range(range_name, table_id, service):
@@ -127,8 +131,9 @@ def update_all_data():
     update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_users_from_info_bot()), users_info, SPREADSHEET_TEAM_INFO_ID)
 
     # update auto moderator
+    update_google_sheets_(format_data_for_sheets(AutoModeratorRp().get_all_users()), users_auto_moder, SPREADSHEET_AUTO_MODERATOR_ID)
 
-
+    
 if __name__ == '__main__':
     update_all_data()
 

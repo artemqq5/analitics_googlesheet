@@ -15,3 +15,18 @@ class AppsRentRp(DefaultDataBase):
             cursorclass=pymysql.cursors.DictCursor
         )
         super().__init__(connection=self.con_apps_rent)
+
+    def get_all_users(self):
+        pass
+
+    def get_all_flows(self):
+        pass
+
+    def get_all_teams(self):
+        pass
+
+    def get_all_domains(self):
+        pass
+
+    def get_all_apps(self):
+        pass
