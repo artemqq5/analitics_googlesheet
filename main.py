@@ -5,6 +5,7 @@ from datetime import datetime
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
+from databases.repository.AppsRentRp import AppsRentRp
 from databases.repository.AutoModeratorRp import AutoModeratorRp
 from databases.repository.ShopRp import ShopRp
 from databases.repository.TeamInfoMessagingRp import TeamInfoMessagingRp
@@ -34,6 +35,13 @@ users_info = "Users!A1"
 
 # mt auto moderator
 users_auto_moder = "Users!A1"
+
+# mt apps rent
+users_apps_rent = "Users!A1"
+teams_apps_rent = "Teams!A1"
+flows_apps_rent = "Flows!A1"
+domains_apps_rent = "Domains!A1"
+apps_apps_rent = "Apps!A1"
 
 
 def clear_range(range_name, table_id, service):
@@ -82,7 +90,7 @@ def update_google_sheets_(data, range_name, table_id):
         body=body
     ).execute()
 
-    print(f"Updated {sheet.get('updatedCells')} cells at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print(f"{range_name} | Updated {sheet.get('updatedCells')} cells at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
 
 def format_data_for_sheets(data):
@@ -133,7 +141,14 @@ def update_all_data():
     # update auto moderator
     update_google_sheets_(format_data_for_sheets(AutoModeratorRp().get_all_users()), users_auto_moder, SPREADSHEET_AUTO_MODERATOR_ID)
 
-    
+    # update apps rent
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_users()), users_apps_rent, SPREADSHEET_APPS_RENT_ID)
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_teams()), teams_apps_rent, SPREADSHEET_APPS_RENT_ID)
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_flows()), flows_apps_rent, SPREADSHEET_APPS_RENT_ID)
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_domains()), domains_apps_rent, SPREADSHEET_APPS_RENT_ID)
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_apps()), apps_apps_rent, SPREADSHEET_APPS_RENT_ID)
+
+
 if __name__ == '__main__':
     update_all_data()
 

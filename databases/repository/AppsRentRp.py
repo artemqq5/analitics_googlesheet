@@ -17,16 +17,21 @@ class AppsRentRp(DefaultDataBase):
         super().__init__(connection=self.con_apps_rent)
 
     def get_all_users(self):
-        pass
+        _command = "SELECT * FROM `users`;"
+        return self._select(_command)
 
     def get_all_flows(self):
-        pass
+        _command = "SELECT * FROM `flows`;"
+        return self._select(_command)
 
     def get_all_teams(self):
-        pass
+        _command = "SELECT * FROM `teams`;"
+        return self._select(_command)
 
     def get_all_domains(self):
-        pass
+        _command = "SELECT * FROM `domains`;"
+        return self._select(_command)
 
     def get_all_apps(self):
-        pass
+        _command = "SELECT * FROM `apps`;"
+        return self._select(_command)
