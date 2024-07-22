@@ -9,7 +9,7 @@ from databases.repository.AppsRentRp import AppsRentRp
 from databases.repository.AutoModeratorRp import AutoModeratorRp
 from databases.repository.ShopRp import ShopRp
 from databases.repository.TeamInfoMessagingRp import TeamInfoMessagingRp
-
+from private_cfg import *
 
 # mt shop
 users_shop = "Users!A1"
