@@ -11,14 +11,11 @@ from databases.repository.ShopRp import ShopRp
 from databases.repository.TeamInfoMessagingRp import TeamInfoMessagingRp
 
 
-from private_cfg import *
-
 # mt shop
-orders = "Orders!A1"
-users = "Users!A1"
-accounts = "Account_items!A1"
-accounts_orders = "Account_orders!A1"
-creo_orders = "Creo_orders!A1"
+users_shop = "Users!A1"
+orders_shop = "Orders!A1"
+items_shop = "Items!A1"
+categories_shop = "Categories!A1"
 
 # mt team info
 chats_creo = "ChatsCreo!A1"
@@ -119,11 +116,10 @@ def format_data_for_sheets(data):
 
 def update_all_data():
     # update mt shop
-    update_google_sheets_(format_data_for_sheets(ShopRp().get_orders_data()), orders, SPREADSHEET_SHOP_ID)
-    update_google_sheets_(format_data_for_sheets(ShopRp().get_users_data()), users, SPREADSHEET_SHOP_ID)
-    update_google_sheets_(format_data_for_sheets(ShopRp().get_accounts_data()), accounts, SPREADSHEET_SHOP_ID)
-    update_google_sheets_(format_data_for_sheets(ShopRp().get_accounts_orders_data()), accounts_orders, SPREADSHEET_SHOP_ID)
-    update_google_sheets_(format_data_for_sheets(ShopRp().get_creo_orders_data()), creo_orders, SPREADSHEET_SHOP_ID)
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_users_data()), users_shop, SPREADSHEET_SHOP_ID)
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_orders_data()), orders_shop, SPREADSHEET_SHOP_ID)
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_items_data()), items_shop, SPREADSHEET_SHOP_ID)
+    update_google_sheets_(format_data_for_sheets(ShopRp().get_categories_data()), categories_shop, SPREADSHEET_SHOP_ID)
 
     # update mt team info
     update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('creo')), chats_creo, SPREADSHEET_TEAM_INFO_ID)

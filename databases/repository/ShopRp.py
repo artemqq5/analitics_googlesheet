@@ -21,17 +21,13 @@ class ShopRp(DefaultDataBase):
         return self._select(_command)
 
     def get_users_data(self):
-        _command = 'SELECT * FROM `users` ORDER BY `time` DESC;'
+        _command = 'SELECT * FROM `users` ORDER BY `join_at` DESC;'
         return self._select(_command)
 
-    def get_accounts_data(self):
-        _command = 'SELECT * FROM `accounts`;'
+    def get_items_data(self):
+        _command = 'SELECT * FROM `items` ORDER BY `date` DESC;'
         return self._select(_command)
 
-    def get_accounts_orders_data(self):
-        _command = 'SELECT * FROM `account_orders`;'
-        return self._select(_command)
-
-    def get_creo_orders_data(self):
-        _command = 'SELECT * FROM `creo_orders`;'
+    def get_categories_data(self):
+        _command = 'SELECT * FROM `categories` ORDER BY `date` DESC;'
         return self._select(_command)
