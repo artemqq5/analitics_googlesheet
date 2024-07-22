@@ -14,7 +14,7 @@ class DefaultDataBase:
                     cursor.execute(query, args)
                     return cursor.fetchone()
         except Exception as e:
-            print(f"({self.__connection.db}) _select_one: {e}")
+            print(f"({self.__connection.db}) _select_one: {e} | {query}")
 
     def _select(self, query, args=None):
         try:
@@ -23,4 +23,4 @@ class DefaultDataBase:
                     cursor.execute(query, args)
                     return cursor.fetchall()
         except Exception as e:
-            print(f"({self.__connection.db}) _select_all: {e}")
+            print(f"({self.__connection.db}) _select_all: {e} | {query}")
