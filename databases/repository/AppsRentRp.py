@@ -17,7 +17,7 @@ class AppsRentRp(DefaultDataBase):
         super().__init__(connection=self.con_apps_rent)
 
     def get_all_users(self):
-        _command = "SELECT * FROM `users`;"
+        _command = "SELECT * FROM `users` ORDER BY `join_at` DESC;"
         return self._select(_command)
 
     def get_all_flows(self):

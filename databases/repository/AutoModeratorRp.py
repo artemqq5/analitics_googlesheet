@@ -17,5 +17,5 @@ class AutoModeratorRp(DefaultDataBase):
         super().__init__(connection=self.con_moderator)
 
     def get_all_users(self):
-        _command = "SELECT * FROM `users`;"
+        _command = "SELECT * FROM `users` ORDER BY `time` DESC;"
         return self._select(_command)
