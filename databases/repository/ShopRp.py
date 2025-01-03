@@ -6,15 +6,7 @@ from private_cfg import DB_PASSWORD, MT_SHOP_DB
 
 class ShopRp(DefaultDataBase):
     def __init__(self):
-        self.con_shop = pymysql.connect(
-            host="localhost",
-            user="root",
-            password=DB_PASSWORD,
-            db=MT_SHOP_DB,
-            charset="utf8mb4",
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        super().__init__(connection=self.con_shop)
+        super().__init__(MT_SHOP_DB)
 
     def get_orders_data(self):
         _command = 'SELECT * FROM `orders` ORDER BY `date` DESC;'

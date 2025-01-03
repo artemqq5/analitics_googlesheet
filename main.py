@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 
 from databases.repository.AppsRentRp import AppsRentRp
 from databases.repository.AutoModeratorRp import AutoModeratorRp
+from databases.repository.GoogleAgencyRp import GoogleAgencyRp
 from databases.repository.ShopRp import ShopRp
 from databases.repository.TeamInfoMessagingRp import TeamInfoMessagingRp
 from private_cfg import *
@@ -39,6 +40,9 @@ teams_apps_rent = "Teams!A1"
 flows_apps_rent = "Flows!A1"
 domains_apps_rent = "Domains!A1"
 apps_apps_rent = "Apps!A1"
+
+# google agency
+taxes_table = "Taxes!A1"
 
 
 def clear_range(range_name, table_id, service):
@@ -143,6 +147,9 @@ def update_all_data():
     update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_flows()), flows_apps_rent, SPREADSHEET_APPS_RENT_ID)
     update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_domains()), domains_apps_rent, SPREADSHEET_APPS_RENT_ID)
     update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_apps()), apps_apps_rent, SPREADSHEET_APPS_RENT_ID)
+
+    # update google agency
+    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_taxes_transactions()), taxes_table, SPREADSHEET_GOOGLE_AGENCY_ID)
 
 
 if __name__ == '__main__':
