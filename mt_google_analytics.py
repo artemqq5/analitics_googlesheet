@@ -200,17 +200,17 @@ class GoogleSheetAPI:
     @staticmethod
     async def fetch_mcc(mcc_uuid):
         """Асинхронный запрос MCC по UUID."""
-        return await GoogleAgencyRp().get_mcc_by_uuid(mcc_uuid)
+        return GoogleAgencyRp().get_mcc_by_uuid(mcc_uuid)
 
     @staticmethod
     async def fetch_account(sub_account_uid):
         """Асинхронный запрос аккаунта по UID."""
-        return await GoogleAgencyRp().get_account_by_uid(sub_account_uid)
+        return GoogleAgencyRp().get_account_by_uid(sub_account_uid)
 
     @staticmethod
     async def fetch_refunded_account(sub_account_uid):
         """Асинхронный запрос рефаунд-аккаунта по UID."""
-        return await GoogleAgencyRp().get_refunded_account_by_uid(sub_account_uid)
+        return GoogleAgencyRp().get_refunded_account_by_uid(sub_account_uid)
 
     @staticmethod
     async def fetch_verify_account(auth_token, account_uid):
