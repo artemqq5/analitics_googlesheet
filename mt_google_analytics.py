@@ -280,19 +280,5 @@ if __name__ == "__main__":
 
     save_list_to_file(formatted_data, f'data_{datetime.now().strftime("%Y-%m-%d %H:%M")}.txt')
 
-    formatted_data = [
-        {'team_name': 'team1', 'data': [
-            {'MCC': '101', 'DATE': '2025-01-05', 'EMAIL': 'user1@example.com', 'AMOUNT': 50, 'SPENT': 20,
-             'REFUND': None},
-            {'MCC': '102', 'DATE': '2025-01-10', 'EMAIL': 'user2@example.com', 'AMOUNT': 75, 'SPENT': 30, 'REFUND': 5}
-        ]},
-        {'team_name': 'team2', 'data': [
-            {'MCC': '201', 'DATE': '2025-02-15', 'EMAIL': 'user3@example.com', 'AMOUNT': 100, 'SPENT': 50,
-             'REFUND': 10},
-            {'MCC': '202', 'DATE': '2025-02-20', 'EMAIL': 'user4@example.com', 'AMOUNT': 150, 'SPENT': 80,
-             'REFUND': None}
-        ]}
-    ]
-
     sheet_api = GoogleSheetAPI()
     asyncio.run(sheet_api.update_sheet(formatted_data))
