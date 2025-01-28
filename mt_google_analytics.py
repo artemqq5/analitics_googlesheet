@@ -276,7 +276,7 @@ def start_google_analitics():
         except Exception as e:
             print(f"An error occurred while saving the list to file: {e}")
 
-    save_list_to_file(formatted_data, f'data_{datetime.now().strftime("%Y-%m-%d %H:%M")}.txt')
+    save_list_to_file(formatted_data, f'temp/data_{datetime.now().strftime("%Y-%m-%d %H:%M")}.txt')
 
     sheet_api = GoogleSheetAPI()
     asyncio.run(sheet_api.update_sheet(formatted_data))
