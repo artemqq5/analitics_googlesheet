@@ -79,7 +79,7 @@ class GoogleSheetAPI:
             ).execute()
 
             request_count += 1  # Увеличиваем счетчик запросов
-            if request_count % 10 == 0:  # Каждые 10 запросов
+            if request_count % 30 == 0:  # Каждые 10 запросов
                 logging.info("Достижение лимита, ожидание 10 секунд...")
                 await asyncio.sleep(10)  # Задержка 10 секунд
 
@@ -188,7 +188,6 @@ class GoogleSheetAPI:
                 })
 
         service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
-        await asyncio.sleep(10)
 
     @staticmethod
     def process_transactions(sub_transactions, refunded):
