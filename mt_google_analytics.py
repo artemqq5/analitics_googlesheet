@@ -30,9 +30,8 @@ class GoogleSheetAPI:
     async def time_limiter_count(self):
         self.request_count += 1
 
-        if self.request_count % 30 == 0:
-            logging.info("Достижение лимита, ожидание 10 секунд...")
-            await asyncio.sleep(10)
+        if self.request_count % 1 == 0:
+            await asyncio.sleep(3)
 
     def authenticate(self):
         creds = None
