@@ -22,3 +22,12 @@ class DefaultDataBase:
                     return cursor.fetchall()
         except Exception as e:
             print(f"{5*'*'}\n({self.__connection.db}) _select_all: {e}\n\n {query} | {args}\n{5*'*'}\n\n")
+
+    def _select_one(self, query, args=None):
+        try:
+            with self.__connection as con:
+                with con.cursor() as cursor:
+                    cursor.execute(query, args)
+                    return cursor.fetchone()
+        except Exception as e:
+            print(f"{5*'*'}\n({self.__connection.db}) _select_one: {e}\n\n {query} | {args}\n{5*'*'}\n\n")

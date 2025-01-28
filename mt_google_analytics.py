@@ -6,6 +6,9 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
+from YeezyAPI import YeezyAPI
+from databases.repository.GoogleAgencyRp import GoogleAgencyRp
+
 
 class GoogleSheetAPI:
     def __init__(self):
@@ -169,26 +172,93 @@ class GoogleSheetAPI:
 
         service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
 
+    @staticmethod
+    def process_transactions(sub_transactions, refunded):
+        """
+        Обрабатывает данные из двух списков, объединяя их в нужный формат.
+        """
+        team_data = {}
+
+
+
+        # Обрабатываем первый список (sub_transactions)
+        for tx in sub_transactions:
+            team_name = tx['team_name']
+            if team_name not in team_data:
+                team_data[team_name] = []  # Создаем список для команды
+
+            mcc = GoogleAgencyRp().get_mcc_by_uuid(tx['mcc_uuid'])
+
+            # Try Authorizate MCC API
+            auth = YeezyAPI().generate_auth(mcc['mcc_id'], mcc['mcc_token'])
+
+            if not auth:
+                return
+
+            # Get Account API info
+            account_api_response = YeezyAPI().get_verify_account(auth['token'], tx['account_uid'])
+            if not account_api_response:
+                return
+
+            account_api = account_api_response.get('accounts', [{}])[0]
+
+            formatted_entry = {
+                'MCC': mcc['mcc_name'],
+                'DATE': tx['created'].strftime("%Y-%m-%d %H:%M"),
+                'EMAIL': GoogleAgencyRp().get_account_by_uid(tx['sub_account_uid'])['account_email'],
+                'AMOUNT': tx['value'],
+                'SPENT': account_api['spend'],
+                'REFUND': None
+            }
+
+            team_data[team_name].append(formatted_entry)
+
+        # Обрабатываем второй список (refunded)
+        for refund in refunded:
+            team_name = refund['team_name']
+
+            if team_name not in team_data:
+                team_data[team_name] = []  # Если новой команды нет, создаем
+
+            formatted_entry = {
+                'MCC': GoogleAgencyRp().get_mcc_by_uuid(refund['mcc_uuid'])['mcc_name'],
+                'DATE': refund['completed_time'].strftime("%Y-%m-%d %H:%M"),
+                'EMAIL': refund['account_email'],
+                'AMOUNT': None,
+                'SPENT': refund['last_spend'],
+                'REFUND': refund['refund_value']
+            }
+
+            team_data[team_name].append(formatted_entry)
+
+        return [{'team_name': team, 'data': data} for team, data in team_data.items()]
+
 
 # 🔹 **Пример использования**
 if __name__ == "__main__":
-    teams_data = [
-        {'team_name': 'team1', 'data': [
-            {'MCC': '101', 'DATE': '2025-01-05', 'EMAIL': 'user1@example.com', 'AMOUNT': 50, 'SPENT': 20,
-             'REFUND': None},
-            {'MCC': '102', 'DATE': '2025-01-10', 'EMAIL': 'user2@example.com', 'AMOUNT': 75, 'SPENT': 30, 'REFUND': 5},
-            {'MCC': '103', 'DATE': '2025-01-15', 'EMAIL': 'user3@example.com', 'AMOUNT': 100, 'SPENT': 50,
-             'REFUND': 5},
-            {'MCC': '104', 'DATE': '2025-01-18', 'EMAIL': 'user4@example.com', 'AMOUNT': 120, 'SPENT': 80,
-             'REFUND': 10},
-            {'MCC': '105', 'DATE': '2025-01-22', 'EMAIL': 'user5@example.com', 'AMOUNT': 90, 'SPENT': 60,
-             'REFUND': None},
-            {'MCC': '106', 'DATE': '2025-01-25', 'EMAIL': 'user6@example.com', 'AMOUNT': 200, 'SPENT': 150,
-             'REFUND': None},
-            {'MCC': '107', 'DATE': '2025-01-27', 'EMAIL': 'user7@example.com', 'AMOUNT': 300, 'SPENT': 220,
-             'REFUND': None},
-        ]}
-    ]
+    sub_transactions = GoogleAgencyRp().get_account_transactions()
+    refunded = GoogleAgencyRp().get_refunded_accounts()
+
+    formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
+
+
+    # teams_data = [
+    #     {'team_name': 'team1', 'data': [
+    #         {'MCC': '101', 'DATE': '2025-01-05', 'EMAIL': 'user1@example.com', 'AMOUNT': 50, 'SPENT': 20,
+    #          'REFUND': None},
+    #         {'MCC': '102', 'DATE': '2025-01-10', 'EMAIL': 'user2@example.com', 'AMOUNT': 75, 'SPENT': 30, 'REFUND': 5},
+    #         {'MCC': '103', 'DATE': '2025-01-15', 'EMAIL': 'user3@example.com', 'AMOUNT': 100, 'SPENT': 50,
+    #          'REFUND': 5},
+    #         {'MCC': '104', 'DATE': '2025-01-18', 'EMAIL': 'user4@example.com', 'AMOUNT': 120, 'SPENT': 80,
+    #          'REFUND': 10},
+    #         {'MCC': '105', 'DATE': '2025-01-22', 'EMAIL': 'user5@example.com', 'AMOUNT': 90, 'SPENT': 60,
+    #          'REFUND': None},
+    #         {'MCC': '106', 'DATE': '2025-01-25', 'EMAIL': 'user6@example.com', 'AMOUNT': 200, 'SPENT': 150,
+    #          'REFUND': None},
+    #         {'MCC': '107', 'DATE': '2025-01-27', 'EMAIL': 'user7@example.com', 'AMOUNT': 300, 'SPENT': 220,
+    #          'REFUND': None},
+    #     ]}
+    # ]
 
     sheet_api = GoogleSheetAPI()
-    sheet_api.update_sheet(teams_data)
+    sheet_api.update_sheet(formatted_data)
