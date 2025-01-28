@@ -1,3 +1,4 @@
+import logging
 import os
 import pickle
 from datetime import datetime
@@ -9,6 +10,9 @@ from google.auth.transport.requests import Request
 from YeezyAPI import YeezyAPI
 from databases.repository.GoogleAgencyRp import GoogleAgencyRp
 
+
+# Настроим логирование
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class GoogleSheetAPI:
     def __init__(self):
@@ -179,7 +183,8 @@ class GoogleSheetAPI:
         """
         team_data = {}
 
-
+        logging.info("Начинаем обработку транзакций.")
+        logging.info(f"Получено sub_transactions: {len(sub_transactions)} записей, refunded: {len(refunded)} записей")
 
         # Обрабатываем первый список (sub_transactions)
         for tx in sub_transactions:
@@ -190,16 +195,20 @@ class GoogleSheetAPI:
             mcc = GoogleAgencyRp().get_mcc_by_uuid(tx['mcc_uuid'])
             account = GoogleAgencyRp().get_account_by_uid(tx['sub_account_uid'])
 
+            logging.info(
+                f"Обрабатываем транзакцию для команды: {team_name}, MCC: {mcc['mcc_name']}, Email: {account['account_email']}")
+
             # Try Authorizate MCC API
             auth = YeezyAPI().generate_auth(mcc['mcc_id'], mcc['mcc_token'])
-
             if not auth:
-                return
+                logging.warning("Ошибка авторизации в MCC API, пропускаем запись.")
+                continue
 
             # Get Account API info
             account_api_response = YeezyAPI().get_verify_account(auth['token'], account['account_uid'])
             if not account_api_response:
-                return
+                logging.warning("Ошибка получения данных аккаунта, пропускаем запись.")
+                continue
 
             account_api = account_api_response.get('accounts', [{}])[0]
 
@@ -213,11 +222,11 @@ class GoogleSheetAPI:
             }
 
             team_data[team_name].append(formatted_entry)
+            logging.info(f"Добавлена запись: {formatted_entry}")
 
         # Обрабатываем второй список (refunded)
         for refund in refunded:
             team_name = refund['team_name']
-
             if team_name not in team_data:
                 team_data[team_name] = []  # Если новой команды нет, создаем
 
@@ -231,8 +240,12 @@ class GoogleSheetAPI:
             }
 
             team_data[team_name].append(formatted_entry)
+            logging.info(f"Добавлена запись (refund): {formatted_entry}")
 
-        return [{'team_name': team, 'data': data} for team, data in team_data.items()]
+        result = [{'team_name': team, 'data': data} for team, data in team_data.items()]
+        logging.info(f"Обработано {len(result)} команд. Итоговая структура: {result}")
+
+        return result
 
 
 # 🔹 **Пример использования**
