@@ -206,7 +206,11 @@ class GoogleSheetAPI:
 
             if not account:
                 logging.error(f"Не найден аккаунт для sub_account_uid={tx['sub_account_uid']}")
-                continue  # Пропускаем запись
+
+                account = GoogleAgencyRp().get_refunded_account_by_uid(tx['sub_account_uid'])
+                if not account:
+                    logging.error(f"Не найден аккаунт (РЕФАУНД) для sub_account_uid={tx['sub_account_uid']}")
+                    continue  # Пропускаем запись
 
             # Получаем данные об аккаунте из API
             account_api_response = YeezyAPI().get_verify_account(auth['token'], account['account_uid'])
@@ -244,11 +248,11 @@ class GoogleSheetAPI:
 
             formatted_entry = {
                 'MCC': mcc['mcc_name'],
-                'DATE': refund['completed_time'].strftime("%Y-%m-%d %H:%M"),
+                'DATE': refund.get('completed_time', None).strftime("%Y-%m-%d %H:%M") if refund.get('completed_time', None) else None,
                 'EMAIL': refund['account_email'],
                 'AMOUNT': None,
-                'SPENT': refund['last_spend'],
-                'REFUND': refund['refund_value']
+                'SPENT': refund.get('last_spend', None),
+                'REFUND': refund.get('refund_value', None)
             }
 
             logging.info(
