@@ -262,7 +262,7 @@ def start_google_analitics():
     refunded = GoogleAgencyRp().get_refunded_accounts()
 
     formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
-    print(formatted_data)
+    # print(formatted_data)
 
     def save_list_to_file(data_list, filename):
         """
