@@ -5,6 +5,7 @@ import pickle
 import time
 from datetime import datetime
 
+from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from tqdm import tqdm
@@ -28,15 +29,19 @@ class GoogleSheetAPI:
         self.SPREADSHEET_ID = '1g0SNORP1BpENLKOcmmZRV0MZgJeQmr5ooNXz_15MhRE'
 
     def authenticate(self):
+        creds = None
         if os.path.exists(self.TOKEN_FILENAME):
             with open(self.TOKEN_FILENAME, 'rb') as token:
                 creds = pickle.load(token)
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(self.CREDS_FILENAME, self.SCOPES)
-            creds = flow.run_local_server(port=0)
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(self.CREDS_FILENAME, self.SCOPES)
+                creds = flow.run_local_server(port=0)
+            # Збереження нового токена в файл
             with open(self.TOKEN_FILENAME, 'wb') as token:
                 pickle.dump(creds, token)
-
         return creds
 
     def get_sheets(self, service):
@@ -277,40 +282,40 @@ class GoogleSheetAPI:
 
 # 🔹 **Пример использования**
 if __name__ == "__main__":
-    # sub_transactions = GoogleAgencyRp().get_account_transactions()
-    # refunded = GoogleAgencyRp().get_refunded_accounts()
-    #
-    # formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
+    sub_transactions = GoogleAgencyRp().get_account_transactions()
+    refunded = GoogleAgencyRp().get_refunded_accounts()
+
+    formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
 
 
-    # def save_list_to_file(data_list, filename):
-    #     """
-    #     Save a list of strings to a text file.
-    #     Each element of the list will be written as a new line in the file.
-    #     """
-    #     try:
-    #         with open(filename, 'w', encoding='utf-8') as file:
-    #             file.write(f"{data_list}\n")
-    #         print(f"List successfully saved to {filename}")
-    #     except Exception as e:
-    #         print(f"An error occurred while saving the list to file: {e}")
-    #
-    #
-    # save_list_to_file(formatted_data, 'data.txt')
+    def save_list_to_file(data_list, filename):
+        """
+        Save a list of strings to a text file.
+        Each element of the list will be written as a new line in the file.
+        """
+        try:
+            with open(filename, 'w', encoding='utf-8') as file:
+                file.write(f"{data_list}\n")
+            print(f"List successfully saved to {filename}")
+        except Exception as e:
+            print(f"An error occurred while saving the list to file: {e}")
 
-    formatted_data = [
-        {'team_name': 'team1', 'data': [
-            {'MCC': '101', 'DATE': '2025-01-05', 'EMAIL': 'user1@example.com', 'AMOUNT': 50, 'SPENT': 20,
-             'REFUND': None},
-            {'MCC': '102', 'DATE': '2025-01-10', 'EMAIL': 'user2@example.com', 'AMOUNT': 75, 'SPENT': 30, 'REFUND': 5}
-        ]},
-        {'team_name': 'team2', 'data': [
-            {'MCC': '201', 'DATE': '2025-02-15', 'EMAIL': 'user3@example.com', 'AMOUNT': 100, 'SPENT': 50,
-             'REFUND': 10},
-            {'MCC': '202', 'DATE': '2025-02-20', 'EMAIL': 'user4@example.com', 'AMOUNT': 150, 'SPENT': 80,
-             'REFUND': None}
-        ]}
-    ]
+
+    save_list_to_file(formatted_data, f'data_{datetime.now().strftime("%Y-%m-%d %H:%M")}.txt')
+    #
+    # formatted_data = [
+    #     {'team_name': 'team1', 'data': [
+    #         {'MCC': '101', 'DATE': '2025-01-05', 'EMAIL': 'user1@example.com', 'AMOUNT': 50, 'SPENT': 20,
+    #          'REFUND': None},
+    #         {'MCC': '102', 'DATE': '2025-01-10', 'EMAIL': 'user2@example.com', 'AMOUNT': 75, 'SPENT': 30, 'REFUND': 5}
+    #     ]},
+    #     {'team_name': 'team2', 'data': [
+    #         {'MCC': '201', 'DATE': '2025-02-15', 'EMAIL': 'user3@example.com', 'AMOUNT': 100, 'SPENT': 50,
+    #          'REFUND': 10},
+    #         {'MCC': '202', 'DATE': '2025-02-20', 'EMAIL': 'user4@example.com', 'AMOUNT': 150, 'SPENT': 80,
+    #          'REFUND': None}
+    #     ]}
+    # ]
 
     sheet_api = GoogleSheetAPI()
     asyncio.run(sheet_api.update_sheet(formatted_data))
