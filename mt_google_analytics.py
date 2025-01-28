@@ -16,6 +16,9 @@ from private_cfg import MCC_ID, MCC_TOKEN
 # Настроим логирование
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+LIMITER_TIME = 5
+last_time = 0
+
 
 class GoogleSheetAPI:
     def __init__(self):
@@ -23,18 +26,6 @@ class GoogleSheetAPI:
         self.TOKEN_FILENAME = 'token.pickle'
         self.CREDS_FILENAME = 'credential.json'
         self.SPREADSHEET_ID = '1g0SNORP1BpENLKOcmmZRV0MZgJeQmr5ooNXz_15MhRE'
-        self.request_semaphore = asyncio.Semaphore(1)  # Обмеження на 50 запитів одночасно
-        self.last_request_time = time.time()
-
-    async def limited_request(self, coro):
-        """Лімітує кількість запитів."""
-        async with self.request_semaphore:
-            current_time = time.time()
-            # Якщо час між запитами менший за 1.2 секунди, робимо паузу (підлаштовуємо під ліміт 60 запитів/хв)
-            if current_time - self.last_request_time < 1.2:
-                await asyncio.sleep(1.2 - (current_time - self.last_request_time))
-            self.last_request_time = time.time()
-            return await coro
 
     def authenticate(self):
         if os.path.exists(self.TOKEN_FILENAME):
@@ -189,10 +180,8 @@ class GoogleSheetAPI:
                     }
                 })
 
-        await self.limited_request(service.spreadsheets().batchUpdate(
-            spreadsheetId=self.SPREADSHEET_ID,
-            body={'requests': requests}
-        ).execute)
+        service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
+        await asyncio.sleep(1000)
 
     @staticmethod
     def process_transactions(sub_transactions, refunded):
