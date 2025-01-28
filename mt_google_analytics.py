@@ -9,7 +9,7 @@ from google.auth.transport.requests import Request
 
 from YeezyAPI import YeezyAPI
 from databases.repository.GoogleAgencyRp import GoogleAgencyRp
-
+from private_cfg import MCC_ID, MCC_TOKEN
 
 # Настроим логирование
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -183,8 +183,13 @@ class GoogleSheetAPI:
         """
         team_data = {}
 
-        logging.info("Начинаем обработку транзакций.")
-        logging.info(f"Получено sub_transactions: {len(sub_transactions)} записей, refunded: {len(refunded)} записей")
+        logging.info(
+            f"Начинаем обработку транзакций. Получено {len(sub_transactions)} sub_transactions и {len(refunded)} refunded.")
+
+        # Авторизация MCC API
+        auth = YeezyAPI().generate_auth(MCC_ID, MCC_TOKEN)
+        if not auth:
+            logging.error(f"Ошибка авторизации MCC: {MCC_ID}")
 
         # Обрабатываем первый список (sub_transactions)
         for tx in sub_transactions:
@@ -195,43 +200,50 @@ class GoogleSheetAPI:
             mcc = GoogleAgencyRp().get_mcc_by_uuid(tx['mcc_uuid'])
             account = GoogleAgencyRp().get_account_by_uid(tx['sub_account_uid'])
 
-            logging.info(
-                f"Обрабатываем транзакцию для команды: {team_name}, MCC: {mcc['mcc_name']}, Email: {account['account_email']}")
+            if not mcc:
+                logging.error(f"Не найден MCC для mcc_uuid={tx['mcc_uuid']}")
+                continue  # Пропускаем запись
 
-            # Try Authorizate MCC API
-            auth = YeezyAPI().generate_auth(mcc['mcc_id'], mcc['mcc_token'])
-            if not auth:
-                logging.warning("Ошибка авторизации в MCC API, пропускаем запись.")
-                continue
+            if not account:
+                logging.error(f"Не найден аккаунт для sub_account_uid={tx['sub_account_uid']}")
+                continue  # Пропускаем запись
 
-            # Get Account API info
+            # Получаем данные об аккаунте из API
             account_api_response = YeezyAPI().get_verify_account(auth['token'], account['account_uid'])
             if not account_api_response:
-                logging.warning("Ошибка получения данных аккаунта, пропускаем запись.")
+                logging.error(f"Не удалось получить данные аккаунта {account['account_uid']} из API")
                 continue
 
             account_api = account_api_response.get('accounts', [{}])[0]
+
+            logging.info(
+                f"Обрабатываем транзакцию для команды: {team_name}, MCC: {mcc['mcc_name']}, Email: {account['account_email']}")
 
             formatted_entry = {
                 'MCC': mcc['mcc_name'],
                 'DATE': tx['created'].strftime("%Y-%m-%d %H:%M"),
                 'EMAIL': account['account_email'],
                 'AMOUNT': tx['value'],
-                'SPENT': account_api['spend'],
+                'SPENT': account_api.get('spend', None),
                 'REFUND': None
             }
 
             team_data[team_name].append(formatted_entry)
-            logging.info(f"Добавлена запись: {formatted_entry}")
 
         # Обрабатываем второй список (refunded)
         for refund in refunded:
             team_name = refund['team_name']
+
             if team_name not in team_data:
                 team_data[team_name] = []  # Если новой команды нет, создаем
 
+            mcc = GoogleAgencyRp().get_mcc_by_uuid(refund['mcc_uuid'])
+            if not mcc:
+                logging.error(f"Не найден MCC для mcc_uuid={refund['mcc_uuid']}")
+                continue
+
             formatted_entry = {
-                'MCC': GoogleAgencyRp().get_mcc_by_uuid(refund['mcc_uuid'])['mcc_name'],
+                'MCC': mcc['mcc_name'],
                 'DATE': refund['completed_time'].strftime("%Y-%m-%d %H:%M"),
                 'EMAIL': refund['account_email'],
                 'AMOUNT': None,
@@ -239,13 +251,13 @@ class GoogleSheetAPI:
                 'REFUND': refund['refund_value']
             }
 
+            logging.info(
+                f"Добавляем refund-транзакцию для {team_name}: MCC {mcc['mcc_name']}, Refund {refund['refund_value']}")
+
             team_data[team_name].append(formatted_entry)
-            logging.info(f"Добавлена запись (refund): {formatted_entry}")
 
-        result = [{'team_name': team, 'data': data} for team, data in team_data.items()]
-        logging.info(f"Обработано {len(result)} команд. Итоговая структура: {result}")
-
-        return result
+        logging.info(f"Готово! Обработано {len(team_data)} команд.")
+        return [{'team_name': team, 'data': data} for team, data in team_data.items()]
 
 
 # 🔹 **Пример использования**
