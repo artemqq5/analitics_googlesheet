@@ -238,7 +238,7 @@ class GoogleSheetAPI:
 
                 mcc = GoogleAgencyRp().get_mcc_by_uuid(transaction['mcc_uuid']) or {}
                 ref_account = GoogleAgencyRp().get_refunded_account_by_uid(transaction['sub_account_uid'])
-                refund_value = ref_account.get('refund_value', None) if ref_account else None
+                refund_value = ref_account.get('refund_value', 0) if ref_account else None
                 account = GoogleAgencyRp().get_account_by_uid(transaction['sub_account_uid']) or {}
 
                 formatted_entry = {
