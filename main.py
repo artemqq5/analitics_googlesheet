@@ -10,6 +10,7 @@ from databases.repository.AutoModeratorRp import AutoModeratorRp
 from databases.repository.GoogleAgencyRp import GoogleAgencyRp
 from databases.repository.ShopRp import ShopRp
 from databases.repository.TeamInfoMessagingRp import TeamInfoMessagingRp
+from mt_google_analytics import start_google_analitics
 from private_cfg import *
 
 # mt shop
@@ -168,6 +169,9 @@ def update_all_data():
 
 if __name__ == '__main__':
     update_all_data()
+
+    # google agency analitics
+    start_google_analitics()
 
     # schedule.every().day.do(update_all_data)
     #

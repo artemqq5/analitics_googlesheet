@@ -257,8 +257,7 @@ class GoogleSheetAPI:
         return [{'team_name': team, 'data': data} for team, data in team_data.items()]
 
 
-# 🔹 **Пример использования**
-if __name__ == "__main__":
+def start_google_analitics():
     sub_transactions = GoogleAgencyRp().get_account_transactions()
     refunded = GoogleAgencyRp().get_refunded_accounts()
 
@@ -277,8 +276,8 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"An error occurred while saving the list to file: {e}")
 
-
     save_list_to_file(formatted_data, f'data_{datetime.now().strftime("%Y-%m-%d %H:%M")}.txt')
 
     sheet_api = GoogleSheetAPI()
     asyncio.run(sheet_api.update_sheet(formatted_data))
+
