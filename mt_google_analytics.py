@@ -54,6 +54,8 @@ class GoogleSheetAPI:
         service = build('sheets', 'v4', credentials=creds)
         existing_sheets = self.get_sheets(service)
 
+        request_count = 0  # Добавлено для отслеживания количества запросов
+
         for team_data in teams_data:
             sheet_name = team_data['team_name']
             row_count = len(team_data['data'])
@@ -71,14 +73,17 @@ class GoogleSheetAPI:
                 body={'values': values}
             ).execute()
 
+            request_count += 1  # Увеличиваем счетчик запросов
+            if request_count % 10 == 0:  # Каждые 10 запросов
+                logging.info("Достижение лимита, ожидание 10 секунд...")
+                await asyncio.sleep(10)  # Задержка 10 секунд
+
             await self.create_table_with_formatting(sheet_id, row_count, service, team_data['data'])
 
-            print(f"Updated sheet for {sheet_name} at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+            logging.info(f"Updated sheet for {sheet_name} at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
     @staticmethod
     def clear_page(sheet_name, sheet_id, table_id, service):
-        """Полностью очищает таблицу, удаляет все данные, форматирование и границы."""
-        # Очищаем значения в таблице
         service.spreadsheets().values().clear(
             spreadsheetId=table_id,
             range=f"{sheet_name}!A1:Z",
@@ -121,7 +126,6 @@ class GoogleSheetAPI:
 
     async def create_table_with_formatting(self, sheet_id, row_count, service, data):
         requests = [
-            # Жирные заголовки
             {
                 'repeatCell': {
                     'range': {'sheetId': sheet_id, 'startRowIndex': 4, 'endRowIndex': 5, 'startColumnIndex': 0,
@@ -130,7 +134,6 @@ class GoogleSheetAPI:
                     'fields': 'userEnteredFormat.textFormat.bold'
                 }
             },
-            # Обводка таблицы
             {
                 'updateBorders': {
                     'range': {'sheetId': sheet_id, 'startRowIndex': 4, 'endRowIndex': 5 + row_count,
@@ -145,7 +148,6 @@ class GoogleSheetAPI:
             }
         ]
 
-        # **Выделяем красным только те строки, где REFUND имеет значение (не None)**
         for i, row in enumerate(data):
             if row.get('REFUND') not in [None]:
                 requests.append({
@@ -181,7 +183,7 @@ class GoogleSheetAPI:
                 })
 
         service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
-        await asyncio.sleep(1000)
+        await asyncio.sleep(10)
 
     @staticmethod
     def process_transactions(sub_transactions, refunded):
@@ -279,6 +281,22 @@ if __name__ == "__main__":
     refunded = GoogleAgencyRp().get_refunded_accounts()
 
     formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
+
+
+    def save_list_to_file(data_list, filename):
+        """
+        Save a list of strings to a text file.
+        Each element of the list will be written as a new line in the file.
+        """
+        try:
+            with open(filename, 'w', encoding='utf-8') as file:
+                file.write(f"{data_list}\n")
+            print(f"List successfully saved to {filename}")
+        except Exception as e:
+            print(f"An error occurred while saving the list to file: {e}")
+
+
+    save_list_to_file(formatted_data, 'data.txt')
 
     sheet_api = GoogleSheetAPI()
     asyncio.run(sheet_api.update_sheet(formatted_data))
