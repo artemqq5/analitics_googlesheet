@@ -198,24 +198,24 @@ class GoogleSheetAPI:
         ).execute)
 
     @staticmethod
-    async def fetch_mcc(mcc_uuid):
+    def fetch_mcc(mcc_uuid):
         """Асинхронный запрос MCC по UUID."""
         return GoogleAgencyRp().get_mcc_by_uuid(mcc_uuid)
 
     @staticmethod
-    async def fetch_account(sub_account_uid):
+    def fetch_account(sub_account_uid):
         """Асинхронный запрос аккаунта по UID."""
         return GoogleAgencyRp().get_account_by_uid(sub_account_uid)
 
     @staticmethod
-    async def fetch_refunded_account(sub_account_uid):
+    def fetch_refunded_account(sub_account_uid):
         """Асинхронный запрос рефаунд-аккаунта по UID."""
         return GoogleAgencyRp().get_refunded_account_by_uid(sub_account_uid)
 
     @staticmethod
-    async def fetch_verify_account(auth_token, account_uid):
+    def fetch_verify_account(auth_token, account_uid):
         """Асинхронный запрос данных аккаунта через API."""
-        return await YeezyAPI().get_verify_account(auth_token, account_uid)
+        return YeezyAPI().get_verify_account(auth_token, account_uid)
 
     @staticmethod
     async def process_transactions(sub_transactions, refunded):
@@ -272,7 +272,7 @@ class GoogleSheetAPI:
                 logging.error(f"Не знайдено акаунт (РЕФАУНД) для sub_account_uid={tx['sub_account_uid']}")
                 return
 
-        account_api_response = await GoogleSheetAPI.fetch_verify_account(auth['token'], account['account_uid'])
+        account_api_response = GoogleSheetAPI.fetch_verify_account(auth['token'], account['account_uid'])
         if not account_api_response:
             logging.error(f"Не вдалося отримати дані акаунту {account['account_uid']} з API")
             return
