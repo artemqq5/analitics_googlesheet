@@ -5,11 +5,8 @@ import pickle
 import time
 from datetime import datetime
 
-import aiohttp
-import google.auth
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from google.auth.transport.requests import Request
 from tqdm import tqdm
 
 from YeezyAPI import YeezyAPI
@@ -26,7 +23,7 @@ class GoogleSheetAPI:
         self.TOKEN_FILENAME = 'token.pickle'
         self.CREDS_FILENAME = 'credential.json'
         self.SPREADSHEET_ID = '1g0SNORP1BpENLKOcmmZRV0MZgJeQmr5ooNXz_15MhRE'
-        self.request_semaphore = asyncio.Semaphore(50)  # Обмеження на 50 запитів одночасно
+        self.request_semaphore = asyncio.Semaphore(1)  # Обмеження на 50 запитів одночасно
         self.last_request_time = time.time()
 
     async def limited_request(self, coro):
@@ -61,7 +58,7 @@ class GoogleSheetAPI:
         response = service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body=body).execute()
         return response["replies"][0]["addSheet"]["properties"]["sheetId"]
 
-    def update_sheet(self, teams_data):
+    async def update_sheet(self, teams_data):
         creds = self.authenticate()
         service = build('sheets', 'v4', credentials=creds)
         existing_sheets = self.get_sheets(service)
@@ -83,7 +80,7 @@ class GoogleSheetAPI:
                 body={'values': values}
             ).execute()
 
-            self.create_table_with_formatting(sheet_id, row_count, service, team_data['data'])
+            await self.create_table_with_formatting(sheet_id, row_count, service, team_data['data'])
 
             print(f"Updated sheet for {sheet_name} at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
@@ -198,124 +195,93 @@ class GoogleSheetAPI:
         ).execute)
 
     @staticmethod
-    def fetch_mcc(mcc_uuid):
-        """Асинхронный запрос MCC по UUID."""
-        return GoogleAgencyRp().get_mcc_by_uuid(mcc_uuid)
-
-    @staticmethod
-    def fetch_account(sub_account_uid):
-        """Асинхронный запрос аккаунта по UID."""
-        return GoogleAgencyRp().get_account_by_uid(sub_account_uid)
-
-    @staticmethod
-    def fetch_refunded_account(sub_account_uid):
-        """Асинхронный запрос рефаунд-аккаунта по UID."""
-        return GoogleAgencyRp().get_refunded_account_by_uid(sub_account_uid)
-
-    @staticmethod
-    def fetch_verify_account(auth_token, account_uid):
-        """Асинхронный запрос данных аккаунта через API."""
-        return YeezyAPI().get_verify_account(auth_token, account_uid)
-
-    @staticmethod
-    async def process_transactions(sub_transactions, refunded):
+    def process_transactions(sub_transactions, refunded):
         """
-        Асинхронна обробка даних з двох списків, об'єднуючи їх у потрібний формат.
+        Обрабатывает данные из двух списков, объединяя их в нужный формат.
         """
         team_data = {}
 
         logging.info(
-            f"\u041f\u043e\u0447\u0430\u0442\u043e\u043a \u043e\u0431\u0440\u043e\u0431\u043a\u0438 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u0439. \u041e\u0442\u0440\u0438\u043c\u0430\u043d\u043e {len(sub_transactions)} sub_transactions \u0456 {len(refunded)} refunded."
-        )
+            f"Начинаем обработку транзакций. Получено {len(sub_transactions)} sub_transactions и {len(refunded)} refunded.")
 
-        # Авторизація MCC API
+        # Авторизация MCC API
         auth = YeezyAPI().generate_auth(MCC_ID, MCC_TOKEN)
         if not auth:
-            logging.error(f"Помилка авторизації MCC: {MCC_ID}")
-            return []
+            logging.error(f"Ошибка авторизации MCC: {MCC_ID}")
 
-        async with aiohttp.ClientSession() as session:
-            # Обробляємо перший список (sub_transactions)
-            for idx, tx in enumerate(sub_transactions, start=1):
-                print(f"Processing sub_transaction {idx}/{len(sub_transactions)}: {tx}")
-                await GoogleSheetAPI.process_transaction(tx, team_data, auth, session, idx, len(sub_transactions))
+        # Обрабатываем первый список (sub_transactions)
+        with tqdm(total=len(sub_transactions), desc="Обработка sub_transactions", unit="транзакция") as pbar:
+            for tx in sub_transactions:
+                team_name = tx['team_name']
+                if team_name not in team_data:
+                    team_data[team_name] = []  # Создаем список для команды
 
-            # Обробляємо другий список (refunded)
-            for idx, refund in enumerate(refunded, start=1):
-                print(f"Processing refunded {idx}/{len(refunded)}: {refund}")
-                await GoogleSheetAPI.process_refund(refund, team_data, session, idx, len(refunded))
+                mcc = GoogleAgencyRp().get_mcc_by_uuid(tx['mcc_uuid'])
+                account = GoogleAgencyRp().get_account_by_uid(tx['sub_account_uid'])
 
-        logging.info(f"Готово! Оброблено {len(team_data)} команд.")
+                if not mcc:
+                    logging.error(f"Не найден MCC для mcc_uuid={tx['mcc_uuid']}")
+                    pbar.update(1)
+                    continue  # Пропускаем запись
+
+                if not account:
+                    logging.error(f"Не найден аккаунт для sub_account_uid={tx['sub_account_uid']}")
+                    account = GoogleAgencyRp().get_refunded_account_by_uid(tx['sub_account_uid'])
+                    if not account:
+                        logging.error(f"Не найден аккаунт (РЕФАУНД) для sub_account_uid={tx['sub_account_uid']}")
+                        pbar.update(1)
+                        continue  # Пропускаем запись
+
+                # Получаем данные об аккаунте из API
+                account_api_response = YeezyAPI().get_verify_account(auth['token'], account['account_uid'])
+                if not account_api_response:
+                    logging.error(f"Не удалось получить данные аккаунта {account['account_uid']} из API")
+                    pbar.update(1)
+                    continue
+
+                account_api = account_api_response.get('accounts', [{}])[0]
+
+                formatted_entry = {
+                    'MCC': mcc['mcc_name'],
+                    'DATE': tx['created'].strftime("%Y-%m-%d %H:%M"),
+                    'EMAIL': account['account_email'],
+                    'AMOUNT': tx['value'],
+                    'SPENT': account_api.get('spend', None),
+                    'REFUND': None
+                }
+
+                team_data[team_name].append(formatted_entry)
+                pbar.update(1)
+
+        # Обрабатываем второй список (refunded)
+        with tqdm(total=len(refunded), desc="Обработка refunded", unit="транзакция") as pbar:
+            for refund in refunded:
+                team_name = refund['team_name']
+
+                if team_name not in team_data:
+                    team_data[team_name] = []  # Если новой команды нет, создаем
+
+                mcc = GoogleAgencyRp().get_mcc_by_uuid(refund['mcc_uuid'])
+                if not mcc:
+                    logging.error(f"Не найден MCC для mcc_uuid={refund['mcc_uuid']}")
+                    pbar.update(1)
+                    continue
+
+                formatted_entry = {
+                    'MCC': mcc['mcc_name'],
+                    'DATE': refund.get('completed_time', None).strftime("%Y-%m-%d %H:%M") if refund.get(
+                        'completed_time') else None,
+                    'EMAIL': refund['account_email'],
+                    'AMOUNT': None,
+                    'SPENT': refund.get('last_spend', None),
+                    'REFUND': refund.get('refund_value', None)
+                }
+
+                team_data[team_name].append(formatted_entry)
+                pbar.update(1)
+
+        logging.info(f"Готово! Обработано {len(team_data)} команд.")
         return [{'team_name': team, 'data': data} for team, data in team_data.items()]
-
-    @staticmethod
-    async def process_transaction(tx, team_data, auth, session, current, total):
-        """Обробляє одну транзакцію."""
-        team_name = tx['team_name']
-        if team_name not in team_data:
-            team_data[team_name] = []
-
-        print(f"[{current}/{total}] Fetching MCC and account details for transaction.")
-        mcc, account = await asyncio.gather(
-            GoogleSheetAPI.fetch_mcc(tx['mcc_uuid']),
-            GoogleSheetAPI.fetch_account(tx['sub_account_uid'])
-        )
-
-        if not mcc:
-            logging.error(f"Не знайдено MCC для mcc_uuid={tx['mcc_uuid']}")
-            return
-
-        if not account:
-            logging.error(f"Не знайдено акаунт для sub_account_uid={tx['sub_account_uid']}")
-            account = GoogleSheetAPI.fetch_refunded_account(tx['sub_account_uid'])
-            if not account:
-                logging.error(f"Не знайдено акаунт (РЕФАУНД) для sub_account_uid={tx['sub_account_uid']}")
-                return
-
-        account_api_response = GoogleSheetAPI.fetch_verify_account(auth['token'], account['account_uid'])
-        if not account_api_response:
-            logging.error(f"Не вдалося отримати дані акаунту {account['account_uid']} з API")
-            return
-
-        account_api = account_api_response.get('accounts', [{}])[0]
-
-        formatted_entry = {
-            'MCC': mcc['mcc_name'],
-            'DATE': tx['created'].strftime("%Y-%m-%d %H:%M"),
-            'EMAIL': account['account_email'],
-            'AMOUNT': tx['value'],
-            'SPENT': account_api.get('spend', None),
-            'REFUND': None
-        }
-
-        team_data[team_name].append(formatted_entry)
-        print(f"[{current}/{total}] Transaction processed successfully.")
-
-    @staticmethod
-    async def process_refund(refund, team_data, session, current, total):
-        """Обробляє один рефаунд."""
-        team_name = refund['team_name']
-        if team_name not in team_data:
-            team_data[team_name] = []
-
-        print(f"[{current}/{total}] Fetching MCC details for refund.")
-        mcc = GoogleSheetAPI.fetch_mcc(refund['mcc_uuid'])
-        if not mcc:
-            logging.error(f"Не знайдено MCC для mcc_uuid={refund['mcc_uuid']}")
-            return
-
-        formatted_entry = {
-            'MCC': mcc['mcc_name'],
-            'DATE': refund.get('completed_time', None).strftime("%Y-%m-%d %H:%M") if refund.get(
-                'completed_time') else None,
-            'EMAIL': refund['account_email'],
-            'AMOUNT': None,
-            'SPENT': refund.get('last_spend', None),
-            'REFUND': refund.get('refund_value', None)
-        }
-
-        team_data[team_name].append(formatted_entry)
-        print(f"[{current}/{total}] Refund processed successfully.")
 
 
 # 🔹 **Пример использования**
@@ -323,7 +289,7 @@ if __name__ == "__main__":
     sub_transactions = GoogleAgencyRp().get_account_transactions()
     refunded = GoogleAgencyRp().get_refunded_accounts()
 
-    formatted_data = asyncio.run(GoogleSheetAPI().process_transactions(sub_transactions, refunded))
+    formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
 
     sheet_api = GoogleSheetAPI()
-    sheet_api.update_sheet(formatted_data)
+    asyncio.run(sheet_api.update_sheet(formatted_data))
