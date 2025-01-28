@@ -17,16 +17,22 @@ from private_cfg import MCC_ID, MCC_TOKEN
 # Настроим логирование
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-LIMITER_TIME = 5
-last_time = 0
-
+request_count = 0  # Добавлено для отслеживания количества запросов
 
 class GoogleSheetAPI:
     def __init__(self):
+        self.request_count = 0
         self.SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
         self.TOKEN_FILENAME = 'token.pickle'
         self.CREDS_FILENAME = 'credential.json'
         self.SPREADSHEET_ID = '1g0SNORP1BpENLKOcmmZRV0MZgJeQmr5ooNXz_15MhRE'
+
+    async def time_limiter_count(self):
+        self.request_count += 1
+
+        if self.request_count % 30 == 0:
+            logging.info("Достижение лимита, ожидание 10 секунд...")
+            await asyncio.sleep(10)
 
     def authenticate(self):
         creds = None
@@ -44,14 +50,16 @@ class GoogleSheetAPI:
                 pickle.dump(creds, token)
         return creds
 
-    def get_sheets(self, service):
+    async def get_sheets(self, service):
         sheets_metadata = service.spreadsheets().get(spreadsheetId=self.SPREADSHEET_ID).execute()
+        await self.time_limiter_count()
         return {sheet['properties']['title']: sheet['properties']['sheetId'] for sheet in
                 sheets_metadata.get('sheets', [])}
 
-    def create_sheet(self, sheet_name, service):
+    async def create_sheet(self, sheet_name, service):
         body = {"requests": [{"addSheet": {"properties": {"title": sheet_name}}}]}
         response = service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body=body).execute()
+        await self.time_limiter_count()
         return response["replies"][0]["addSheet"]["properties"]["sheetId"]
 
     async def update_sheet(self, teams_data):
@@ -59,16 +67,14 @@ class GoogleSheetAPI:
         service = build('sheets', 'v4', credentials=creds)
         existing_sheets = self.get_sheets(service)
 
-        request_count = 0  # Добавлено для отслеживания количества запросов
-
         for team_data in teams_data:
             sheet_name = team_data['team_name']
             row_count = len(team_data['data'])
 
-            sheet_id = existing_sheets.get(sheet_name) or self.create_sheet(sheet_name, service)
+            sheet_id = existing_sheets.get(sheet_name) or await self.create_sheet(sheet_name, service)
 
-            self.clear_page(sheet_name, sheet_id, self.SPREADSHEET_ID, service)
-            self.add_formulas(sheet_name, service)
+            await self.clear_page(sheet_name, sheet_id, self.SPREADSHEET_ID, service)
+            await self.add_formulas(sheet_name, service)
 
             values = self.format_data_for_sheets(team_data['data'])
             service.spreadsheets().values().update(
@@ -78,22 +84,18 @@ class GoogleSheetAPI:
                 body={'values': values}
             ).execute()
 
-            request_count += 1  # Увеличиваем счетчик запросов
-            if request_count % 30 == 0:  # Каждые 10 запросов
-                logging.info("Достижение лимита, ожидание 10 секунд...")
-                await asyncio.sleep(10)  # Задержка 10 секунд
-
+            await self.time_limiter_count()
             await self.create_table_with_formatting(sheet_id, row_count, service, team_data['data'])
 
             logging.info(f"Updated sheet for {sheet_name} at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
-    @staticmethod
-    def clear_page(sheet_name, sheet_id, table_id, service):
+    async def clear_page(self, sheet_name, sheet_id, table_id, service):
         service.spreadsheets().values().clear(
             spreadsheetId=table_id,
             range=f"{sheet_name}!A1:Z",
             body={}
         ).execute()
+        self.request_count += 1
 
     def format_data_for_sheets(self, data):
         if not data:
@@ -115,7 +117,7 @@ class GoogleSheetAPI:
 
         return formatted_data
 
-    def add_formulas(self, sheet_name, service):
+    async def add_formulas(self, sheet_name, service):
         values = [
             ["Updated:", datetime.now().strftime('%Y-%m-%d %H:%M')],
             ["Spend:", "=SUM(E6:E)"],
@@ -128,6 +130,7 @@ class GoogleSheetAPI:
             valueInputOption="USER_ENTERED",
             body={"values": values}
         ).execute()
+        await self.time_limiter_count()
 
     async def create_table_with_formatting(self, sheet_id, row_count, service, data):
         requests = [
@@ -188,6 +191,7 @@ class GoogleSheetAPI:
                 })
 
         service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
+        await self.time_limiter_count()
 
     @staticmethod
     def process_transactions(sub_transactions, refunded):
