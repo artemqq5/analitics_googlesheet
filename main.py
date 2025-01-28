@@ -157,13 +157,13 @@ def update_all_data():
 
     # update google agency
     update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_taxes_transactions()), google_taxes, SPREADSHEET_GOOGLE_AGENCY_ID)
-    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_accounts()), google_accounts, SPREADSHEET_GOOGLE_AGENCY_ID)
-    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_refunded_accounts()), google_refunded_accounts, SPREADSHEET_GOOGLE_AGENCY_ID)
-    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_teams()), google_teams, SPREADSHEET_GOOGLE_AGENCY_ID)
-    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_mcc()), google_mcc, SPREADSHEET_GOOGLE_AGENCY_ID)
-    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_balances()), google_balances, SPREADSHEET_GOOGLE_AGENCY_ID)
-    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_account_transactions()), google_account_transactions, SPREADSHEET_GOOGLE_AGENCY_ID)
-    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_mcc_transactions()), google_mcc_transactions, SPREADSHEET_GOOGLE_AGENCY_ID)
+    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_accounts()), google_accounts, SPREADSHEET_GOOGLE_AGENCY_ID)
+    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_refunded_accounts()), google_refunded_accounts, SPREADSHEET_GOOGLE_AGENCY_ID)
+    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_teams()), google_teams, SPREADSHEET_GOOGLE_AGENCY_ID)
+    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_mcc()), google_mcc, SPREADSHEET_GOOGLE_AGENCY_ID)
+    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_balances()), google_balances, SPREADSHEET_GOOGLE_AGENCY_ID)
+    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_account_transactions()), google_account_transactions, SPREADSHEET_GOOGLE_AGENCY_ID)
+    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_mcc_transactions()), google_mcc_transactions, SPREADSHEET_GOOGLE_AGENCY_ID)
 
 
 if __name__ == '__main__':
