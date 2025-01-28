@@ -188,6 +188,7 @@ class GoogleSheetAPI:
                 team_data[team_name] = []  # Создаем список для команды
 
             mcc = GoogleAgencyRp().get_mcc_by_uuid(tx['mcc_uuid'])
+            account = GoogleAgencyRp().get_account_by_uid(tx['sub_account_uid'])
 
             # Try Authorizate MCC API
             auth = YeezyAPI().generate_auth(mcc['mcc_id'], mcc['mcc_token'])
@@ -196,7 +197,7 @@ class GoogleSheetAPI:
                 return
 
             # Get Account API info
-            account_api_response = YeezyAPI().get_verify_account(auth['token'], tx['account_uid'])
+            account_api_response = YeezyAPI().get_verify_account(auth['token'], account['account_uid'])
             if not account_api_response:
                 return
 
@@ -205,7 +206,7 @@ class GoogleSheetAPI:
             formatted_entry = {
                 'MCC': mcc['mcc_name'],
                 'DATE': tx['created'].strftime("%Y-%m-%d %H:%M"),
-                'EMAIL': GoogleAgencyRp().get_account_by_uid(tx['sub_account_uid'])['account_email'],
+                'EMAIL': account['account_email'],
                 'AMOUNT': tx['value'],
                 'SPENT': account_api['spend'],
                 'REFUND': None
