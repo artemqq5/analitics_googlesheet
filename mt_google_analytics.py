@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import pickle
+import time
 from datetime import datetime
 
 import aiohttp
@@ -25,6 +26,18 @@ class GoogleSheetAPI:
         self.TOKEN_FILENAME = 'token.pickle'
         self.CREDS_FILENAME = 'credential.json'
         self.SPREADSHEET_ID = '1g0SNORP1BpENLKOcmmZRV0MZgJeQmr5ooNXz_15MhRE'
+        self.request_semaphore = asyncio.Semaphore(50)  # Обмеження на 50 запитів одночасно
+        self.last_request_time = time.time()
+
+    async def limited_request(self, coro):
+        """Лімітує кількість запитів."""
+        async with self.request_semaphore:
+            current_time = time.time()
+            # Якщо час між запитами менший за 1.2 секунди, робимо паузу (підлаштовуємо під ліміт 60 запитів/хв)
+            if current_time - self.last_request_time < 1.2:
+                await asyncio.sleep(1.2 - (current_time - self.last_request_time))
+            self.last_request_time = time.time()
+            return await coro
 
     def authenticate(self):
         if os.path.exists(self.TOKEN_FILENAME):
@@ -118,7 +131,7 @@ class GoogleSheetAPI:
             body={"values": values}
         ).execute()
 
-    def create_table_with_formatting(self, sheet_id, row_count, service, data):
+    async def create_table_with_formatting(self, sheet_id, row_count, service, data):
         requests = [
             # Жирные заголовки
             {
@@ -179,8 +192,10 @@ class GoogleSheetAPI:
                     }
                 })
 
-        service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
-
+        await self.limited_request(service.spreadsheets().batchUpdate(
+            spreadsheetId=self.SPREADSHEET_ID,
+            body={'requests': requests}
+        ).execute)
 
     @staticmethod
     async def fetch_mcc(mcc_uuid):
@@ -314,24 +329,6 @@ if __name__ == "__main__":
     refunded = GoogleAgencyRp().get_refunded_accounts()
 
     formatted_data = asyncio.run(GoogleSheetAPI().process_transactions(sub_transactions, refunded))
-
-    # teams_data = [
-    #     {'team_name': 'team1', 'data': [
-    #         {'MCC': '101', 'DATE': '2025-01-05', 'EMAIL': 'user1@example.com', 'AMOUNT': 50, 'SPENT': 20,
-    #          'REFUND': None},
-    #         {'MCC': '102', 'DATE': '2025-01-10', 'EMAIL': 'user2@example.com', 'AMOUNT': 75, 'SPENT': 30, 'REFUND': 5},
-    #         {'MCC': '103', 'DATE': '2025-01-15', 'EMAIL': 'user3@example.com', 'AMOUNT': 100, 'SPENT': 50,
-    #          'REFUND': 5},
-    #         {'MCC': '104', 'DATE': '2025-01-18', 'EMAIL': 'user4@example.com', 'AMOUNT': 120, 'SPENT': 80,
-    #          'REFUND': 10},
-    #         {'MCC': '105', 'DATE': '2025-01-22', 'EMAIL': 'user5@example.com', 'AMOUNT': 90, 'SPENT': 60,
-    #          'REFUND': None},
-    #         {'MCC': '106', 'DATE': '2025-01-25', 'EMAIL': 'user6@example.com', 'AMOUNT': 200, 'SPENT': 150,
-    #          'REFUND': None},
-    #         {'MCC': '107', 'DATE': '2025-01-27', 'EMAIL': 'user7@example.com', 'AMOUNT': 300, 'SPENT': 220,
-    #          'REFUND': None},
-    #     ]}
-    # ]
 
     sheet_api = GoogleSheetAPI()
     sheet_api.update_sheet(formatted_data)
