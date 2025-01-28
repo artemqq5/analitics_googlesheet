@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import pickle
-import time
 from datetime import datetime
 
 from google.auth.transport.requests import Request
@@ -18,6 +17,7 @@ from private_cfg import MCC_ID, MCC_TOKEN
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 request_count = 0  # Добавлено для отслеживания количества запросов
+
 
 class GoogleSheetAPI:
     def __init__(self):
@@ -65,7 +65,7 @@ class GoogleSheetAPI:
     async def update_sheet(self, teams_data):
         creds = self.authenticate()
         service = build('sheets', 'v4', credentials=creds)
-        existing_sheets = self.get_sheets(service)
+        existing_sheets = await self.get_sheets(service)
 
         for team_data in teams_data:
             sheet_name = team_data['team_name']
@@ -265,6 +265,7 @@ def start_google_analitics():
     refunded = GoogleAgencyRp().get_refunded_accounts()
 
     formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
+
     # print(formatted_data)
 
     def save_list_to_file(data_list, filename):
@@ -283,4 +284,3 @@ def start_google_analitics():
 
     sheet_api = GoogleSheetAPI()
     asyncio.run(sheet_api.update_sheet(formatted_data))
-
