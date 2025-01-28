@@ -225,7 +225,8 @@ class GoogleSheetAPI:
         team_data = {}
 
         logging.info(
-            f"Початок обробки транзакцій. Отримано {len(sub_transactions)} sub_transactions і {len(refunded)} refunded.")
+            f"\u041f\u043e\u0447\u0430\u0442\u043e\u043a \u043e\u0431\u0440\u043e\u0431\u043a\u0438 \u0442\u0440\u0430\u043d\u0437\u0430\u043a\u0446\u0456\u0439. \u041e\u0442\u0440\u0438\u043c\u0430\u043d\u043e {len(sub_transactions)} sub_transactions \u0456 {len(refunded)} refunded."
+        )
 
         # Авторизація MCC API
         auth = YeezyAPI().generate_auth(MCC_ID, MCC_TOKEN)
@@ -235,31 +236,26 @@ class GoogleSheetAPI:
 
         async with aiohttp.ClientSession() as session:
             # Обробляємо перший список (sub_transactions)
-            pbar = tqdm(total=len(sub_transactions), desc="Обробка sub_transactions", unit="транзакція")
-            tasks = []
-            for tx in sub_transactions:
-                tasks.append(GoogleSheetAPI.process_transaction(tx, team_data, auth, session, pbar))
-            await asyncio.gather(*tasks)
-            pbar.close()
+            for idx, tx in enumerate(sub_transactions, start=1):
+                print(f"Processing sub_transaction {idx}/{len(sub_transactions)}: {tx}")
+                await GoogleSheetAPI.process_transaction(tx, team_data, auth, session, idx, len(sub_transactions))
 
             # Обробляємо другий список (refunded)
-            pbar = tqdm(total=len(refunded), desc="Обробка refunded", unit="транзакція")
-            tasks = []
-            for refund in refunded:
-                tasks.append(GoogleSheetAPI.process_refund(refund, team_data, session, pbar))
-            await asyncio.gather(*tasks)
-            pbar.close()
+            for idx, refund in enumerate(refunded, start=1):
+                print(f"Processing refunded {idx}/{len(refunded)}: {refund}")
+                await GoogleSheetAPI.process_refund(refund, team_data, session, idx, len(refunded))
 
         logging.info(f"Готово! Оброблено {len(team_data)} команд.")
         return [{'team_name': team, 'data': data} for team, data in team_data.items()]
 
     @staticmethod
-    async def process_transaction(tx, team_data, auth, session, pbar):
+    async def process_transaction(tx, team_data, auth, session, current, total):
         """Обробляє одну транзакцію."""
         team_name = tx['team_name']
         if team_name not in team_data:
             team_data[team_name] = []
 
+        print(f"[{current}/{total}] Fetching MCC and account details for transaction.")
         mcc, account = await asyncio.gather(
             GoogleSheetAPI.fetch_mcc(tx['mcc_uuid']),
             GoogleSheetAPI.fetch_account(tx['sub_account_uid'])
@@ -267,21 +263,18 @@ class GoogleSheetAPI:
 
         if not mcc:
             logging.error(f"Не знайдено MCC для mcc_uuid={tx['mcc_uuid']}")
-            pbar.update(1)
             return
 
         if not account:
             logging.error(f"Не знайдено акаунт для sub_account_uid={tx['sub_account_uid']}")
-            account = await GoogleSheetAPI.fetch_refunded_account(tx['sub_account_uid'])
+            account = GoogleSheetAPI.fetch_refunded_account(tx['sub_account_uid'])
             if not account:
                 logging.error(f"Не знайдено акаунт (РЕФАУНД) для sub_account_uid={tx['sub_account_uid']}")
-                pbar.update(1)
                 return
 
         account_api_response = await GoogleSheetAPI.fetch_verify_account(auth['token'], account['account_uid'])
         if not account_api_response:
             logging.error(f"Не вдалося отримати дані акаунту {account['account_uid']} з API")
-            pbar.update(1)
             return
 
         account_api = account_api_response.get('accounts', [{}])[0]
@@ -296,19 +289,19 @@ class GoogleSheetAPI:
         }
 
         team_data[team_name].append(formatted_entry)
-        pbar.update(1)
+        print(f"[{current}/{total}] Transaction processed successfully.")
 
     @staticmethod
-    async def process_refund(refund, team_data, session, pbar):
+    async def process_refund(refund, team_data, session, current, total):
         """Обробляє один рефаунд."""
         team_name = refund['team_name']
         if team_name not in team_data:
             team_data[team_name] = []
 
-        mcc = await GoogleSheetAPI.fetch_mcc(refund['mcc_uuid'])
+        print(f"[{current}/{total}] Fetching MCC details for refund.")
+        mcc = GoogleSheetAPI.fetch_mcc(refund['mcc_uuid'])
         if not mcc:
             logging.error(f"Не знайдено MCC для mcc_uuid={refund['mcc_uuid']}")
-            pbar.update(1)
             return
 
         formatted_entry = {
@@ -322,7 +315,7 @@ class GoogleSheetAPI:
         }
 
         team_data[team_name].append(formatted_entry)
-        pbar.update(1)
+        print(f"[{current}/{total}] Refund processed successfully.")
 
 
 # 🔹 **Пример использования**
