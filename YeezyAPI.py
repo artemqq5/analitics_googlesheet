@@ -17,7 +17,7 @@ class YeezyAPI:
         payload = json.dumps({
             "account_id": mcc_id,
             "secret": mcc_secret_token,
-            "timeout": 600
+            "timeout": 1200
         })
 
         response = requests.request("POST", url, headers=self._HEADERS, data=payload)

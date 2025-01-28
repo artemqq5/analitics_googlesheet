@@ -205,72 +205,49 @@ class GoogleSheetAPI:
         if not auth:
             logging.error(f"Ошибка авторизации MCC: {MCC_ID}")
 
-        # Обрабатываем первый список (sub_transactions)
-        with tqdm(total=len(sub_transactions), desc="Обработка sub_transactions", unit="транзакция") as pbar:
-            for tx in sub_transactions:
-                team_name = tx['team_name']
+        unique_transactions = [
+            (transaction['sub_account_uid'], transaction['mcc_uuid'], transaction['team_name'])
+            for transaction in sub_transactions
+        ]
+        unique_refunds = [
+            (refund['account_uid'], refund['mcc_uuid'], refund['team_name'])
+            for refund in refunded
+        ]
+        unique_accounts = set(unique_transactions + unique_refunds)
+        unique_result = [
+            {"sub_account_uid": account[0], "mcc_uuid": account[1], "team_name": account[2]}
+            for account in unique_accounts
+        ]
+        logging.info(f"Унікальних акаунтів {len(unique_result)}")
+
+        with tqdm(total=len(unique_result), desc="Обработка transactions", unit="транзакция") as pbar:
+            for transaction in unique_result:
+                team_name = transaction['team_name']
+
                 if team_name not in team_data:
-                    team_data[team_name] = []  # Создаем список для команды
-
-                mcc = GoogleAgencyRp().get_mcc_by_uuid(tx['mcc_uuid'])
-                account = GoogleAgencyRp().get_account_by_uid(tx['sub_account_uid'])
-
-                if not mcc:
-                    logging.error(f"Не найден MCC для mcc_uuid={tx['mcc_uuid']}")
-                    pbar.update(1)
-                    continue  # Пропускаем запись
-
-                if not account:
-                    logging.error(f"Не найден аккаунт для sub_account_uid={tx['sub_account_uid']}")
-                    account = GoogleAgencyRp().get_refunded_account_by_uid(tx['sub_account_uid'])
-                    if not account:
-                        logging.error(f"Не найден аккаунт (РЕФАУНД) для sub_account_uid={tx['sub_account_uid']}")
-                        pbar.update(1)
-                        continue  # Пропускаем запись
+                    team_data[team_name] = []
 
                 # Получаем данные об аккаунте из API
-                account_api_response = YeezyAPI().get_verify_account(auth['token'], account['account_uid'])
+                account_api_response = YeezyAPI().get_verify_account(auth['token'], transaction['sub_account_uid'])
                 if not account_api_response:
-                    logging.error(f"Не удалось получить данные аккаунта {account['account_uid']} из API")
+                    logging.error(f"❌ Не удалось получить данные аккаунта {transaction['sub_account_uid']} из API")
                     pbar.update(1)
                     continue
 
                 account_api = account_api_response.get('accounts', [{}])[0]
 
+                mcc = GoogleAgencyRp().get_mcc_by_uuid(transaction['mcc_uuid']) or {}
+                ref_account = GoogleAgencyRp().get_refunded_account_by_uid(transaction['sub_account_uid'])
+                refund_value = ref_account.get('refund_value', None) if ref_account else None
+                account = GoogleAgencyRp().get_account_by_uid(transaction['sub_account_uid']) or {}
+
                 formatted_entry = {
-                    'MCC': mcc['mcc_name'],
-                    'DATE': tx['created'].strftime("%Y-%m-%d %H:%M"),
-                    'EMAIL': account['account_email'],
-                    'AMOUNT': tx['value'],
+                    'MCC': mcc.get('mcc_name', None),
+                    'DATE': account.get('created', None),
+                    'EMAIL': account_api.get('email', None),
+                    'AMOUNT': account_api.get('balance', None),
                     'SPENT': account_api.get('spend', None),
-                    'REFUND': None
-                }
-
-                team_data[team_name].append(formatted_entry)
-                pbar.update(1)
-
-        # Обрабатываем второй список (refunded)
-        with tqdm(total=len(refunded), desc="Обработка refunded", unit="транзакция") as pbar:
-            for refund in refunded:
-                team_name = refund['team_name']
-
-                if team_name not in team_data:
-                    team_data[team_name] = []  # Если новой команды нет, создаем
-
-                mcc = GoogleAgencyRp().get_mcc_by_uuid(refund['mcc_uuid'])
-                if not mcc:
-                    logging.error(f"Не найден MCC для mcc_uuid={refund['mcc_uuid']}")
-                    pbar.update(1)
-                    continue
-
-                formatted_entry = {
-                    'MCC': mcc['mcc_name'],
-                    'DATE': refund.get('completed_time', None).strftime("%Y-%m-%d %H:%M") if refund.get(
-                        'completed_time') else None,
-                    'EMAIL': refund['account_email'],
-                    'AMOUNT': None,
-                    'SPENT': refund.get('last_spend', None),
-                    'REFUND': refund.get('refund_value', None)
+                    'REFUND': refund_value
                 }
 
                 team_data[team_name].append(formatted_entry)
@@ -286,7 +263,7 @@ if __name__ == "__main__":
     refunded = GoogleAgencyRp().get_refunded_accounts()
 
     formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
-
+    print(formatted_data)
 
     def save_list_to_file(data_list, filename):
         """
@@ -302,20 +279,20 @@ if __name__ == "__main__":
 
 
     save_list_to_file(formatted_data, f'data_{datetime.now().strftime("%Y-%m-%d %H:%M")}.txt')
-    #
-    # formatted_data = [
-    #     {'team_name': 'team1', 'data': [
-    #         {'MCC': '101', 'DATE': '2025-01-05', 'EMAIL': 'user1@example.com', 'AMOUNT': 50, 'SPENT': 20,
-    #          'REFUND': None},
-    #         {'MCC': '102', 'DATE': '2025-01-10', 'EMAIL': 'user2@example.com', 'AMOUNT': 75, 'SPENT': 30, 'REFUND': 5}
-    #     ]},
-    #     {'team_name': 'team2', 'data': [
-    #         {'MCC': '201', 'DATE': '2025-02-15', 'EMAIL': 'user3@example.com', 'AMOUNT': 100, 'SPENT': 50,
-    #          'REFUND': 10},
-    #         {'MCC': '202', 'DATE': '2025-02-20', 'EMAIL': 'user4@example.com', 'AMOUNT': 150, 'SPENT': 80,
-    #          'REFUND': None}
-    #     ]}
-    # ]
+
+    formatted_data = [
+        {'team_name': 'team1', 'data': [
+            {'MCC': '101', 'DATE': '2025-01-05', 'EMAIL': 'user1@example.com', 'AMOUNT': 50, 'SPENT': 20,
+             'REFUND': None},
+            {'MCC': '102', 'DATE': '2025-01-10', 'EMAIL': 'user2@example.com', 'AMOUNT': 75, 'SPENT': 30, 'REFUND': 5}
+        ]},
+        {'team_name': 'team2', 'data': [
+            {'MCC': '201', 'DATE': '2025-02-15', 'EMAIL': 'user3@example.com', 'AMOUNT': 100, 'SPENT': 50,
+             'REFUND': 10},
+            {'MCC': '202', 'DATE': '2025-02-20', 'EMAIL': 'user4@example.com', 'AMOUNT': 150, 'SPENT': 80,
+             'REFUND': None}
+        ]}
+    ]
 
     sheet_api = GoogleSheetAPI()
     asyncio.run(sheet_api.update_sheet(formatted_data))
