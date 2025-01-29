@@ -31,7 +31,7 @@ class GoogleSheetAPI:
         self.request_count += 1
 
         if self.request_count % 1 == 0:
-            await asyncio.sleep(3)
+            await asyncio.sleep(5)
 
     def authenticate(self):
         creds = None
