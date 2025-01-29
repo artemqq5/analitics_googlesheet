@@ -193,20 +193,24 @@ class GoogleSheetAPI:
         await self.time_limiter_count()
 
     @staticmethod
-    def process_transactions(sub_transactions, refunded):
+    def process_transactions(sub_transactions, refunded, accounts):
         """
         Обрабатывает данные из двух списков, объединяя их в нужный формат.
         """
         team_data = {}
 
         logging.info(
-            f"Начинаем обработку транзакций. Получено {len(sub_transactions)} sub_transactions и {len(refunded)} refunded.")
+            f"Начинаем обработку транзакций. Получено {len(sub_transactions)} sub_transactions, {len(refunded)} refunded, {len(accounts)} accounts")
 
         # Авторизация MCC API
         auth = YeezyAPI().generate_auth(MCC_ID, MCC_TOKEN)
         if not auth:
             logging.error(f"Ошибка авторизации MCC: {MCC_ID}")
 
+        unique_accounts = [
+            (acc['account_uid'], acc['mcc_uuid'], acc['team_name'])
+            for acc in accounts
+        ]
         unique_transactions = [
             (transaction['sub_account_uid'], transaction['mcc_uuid'], transaction['team_name'])
             for transaction in sub_transactions
@@ -215,7 +219,7 @@ class GoogleSheetAPI:
             (refund['account_uid'], refund['mcc_uuid'], refund['team_name'])
             for refund in refunded
         ]
-        unique_accounts = set(unique_transactions + unique_refunds)
+        unique_accounts = set(unique_transactions + unique_refunds + unique_accounts)
         unique_result = [
             {"sub_account_uid": account[0], "mcc_uuid": account[1], "team_name": account[2]}
             for account in unique_accounts
@@ -262,8 +266,9 @@ class GoogleSheetAPI:
 def start_google_analitics():
     sub_transactions = GoogleAgencyRp().get_account_transactions()
     refunded = GoogleAgencyRp().get_refunded_accounts()
+    accounts = GoogleAgencyRp().get_accounts()
 
-    formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded)
+    formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded, accounts)
     for team in formatted_data:
         team['data'].sort(
             key=lambda x: x['DATE'] if x['DATE'] else datetime.min,
