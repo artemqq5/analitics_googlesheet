@@ -266,7 +266,7 @@ class GoogleSheetAPI:
 def start_google_analitics():
     sub_transactions = GoogleAgencyRp().get_account_transactions()
     refunded = GoogleAgencyRp().get_refunded_accounts()
-    accounts = GoogleAgencyRp().get_accounts()
+    accounts = GoogleAgencyRp().get_accounts_with_team()
 
     formatted_data = GoogleSheetAPI().process_transactions(sub_transactions, refunded, accounts)
     for team in formatted_data:

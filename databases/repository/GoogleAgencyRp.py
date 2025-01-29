@@ -11,24 +11,12 @@ class GoogleAgencyRp(DefaultDataBase):
         _command = f'SELECT * FROM `taxes` ORDER BY `id` DESC;'
         return self._select(_command)
 
-    def get_teams(self):
-        _command = f'SELECT * FROM `teams` ORDER BY `team_id` DESC;'
-        return self._select(_command)
-
-    def get_accounts(self):
-        _command = f'SELECT * FROM `sub_accounts` ORDER BY `created` DESC;'
+    def get_accounts_with_team(self):
+        _command = f'SELECT * FROM `sub_accounts` WHERE `team_name` != "default" ORDER BY `created` DESC;'
         return self._select(_command)
 
     def get_refunded_accounts(self):
         _command = f'SELECT * FROM `refunded_accounts` ORDER BY `created` DESC;'
-        return self._select(_command)
-
-    def get_mcc(self):
-        _command = f'SELECT * FROM `mcc` ORDER BY `created` DESC;'
-        return self._select(_command)
-
-    def get_balances(self):
-        _command = f'SELECT * FROM `balances`;'
         return self._select(_command)
 
     def get_account_transactions(self):
@@ -47,8 +35,6 @@ class GoogleAgencyRp(DefaultDataBase):
         query = "SELECT * FROM `mcc` WHERE `mcc_uuid` = %s LIMIT 1;"
         return self._select_one(query, (mcc_uuid,))
 
-    def get_mcc_transactions(self):
-        _command = f'SELECT * FROM `transactions` ORDER BY `id` DESC;'
-        return self._select(_command)
+
 
 
