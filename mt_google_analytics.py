@@ -248,9 +248,16 @@ class GoogleSheetAPI:
                 refund_value = ref_account.get('refund_value', 0) if ref_account else None
                 account = GoogleAgencyRp().get_account_by_uid(transaction['sub_account_uid']) or {}
 
+                if account:
+                    date_created = account.get('created', None)
+                elif ref_account:
+                    date_created = ref_account.get('completed_time', None) or ref_account.get('created', None)
+                else:
+                    date_created = None
+
                 formatted_entry = {
                     'MCC': mcc.get('mcc_name', None),
-                    'DATE': account.get('created', None) or ref_account.get('completed_time', None) or ref_account.get('created', None),
+                    'DATE': date_created,
                     'EMAIL': account_api.get('email', None),
                     'AMOUNT': account_api.get('balance', None),
                     'SPENT': account_api.get('spend', None),
@@ -294,7 +301,4 @@ def start_google_analitics():
     sheet_api = GoogleSheetAPI()
     asyncio.run(sheet_api.update_sheet(formatted_data))
 
-
 # start_google_analitics()
-
-
