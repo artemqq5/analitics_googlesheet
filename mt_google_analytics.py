@@ -85,21 +85,14 @@ class GoogleSheetAPI:
             })
             formatting_requests.extend(self.create_formatting_requests(sheet_id, row_count, team_data['data']))
 
-            # service.spreadsheets().values().update(
-            #     spreadsheetId=self.SPREADSHEET_ID,
-            #     range=f'{sheet_name}!A5',
-            #     valueInputOption="RAW",
-            #     body={'values': values}
-            # ).execute()
+        if updates:
+            await self.batch_update_sheets(updates, service)
 
-            if updates:
-                await self.batch_update_sheets(updates, service)
+        # Виконуємо batchUpdate для форматування
+        if formatting_requests:
+            await self.batch_update_formatting(formatting_requests, service)
 
-            # Виконуємо batchUpdate для форматування
-            if formatting_requests:
-                await self.batch_update_formatting(formatting_requests, service)
-
-            logging.info(f"Updated {len(teams_data)} sheets at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+        logging.info(f"Updated {len(teams_data)} sheets at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
     async def batch_update_sheets(self, updates, service):
         batch_data = {"valueInputOption": "RAW", "data": updates}
