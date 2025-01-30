@@ -18,6 +18,7 @@ from private_cfg import MCC_ID, MCC_TOKEN
 # Настроим логирование
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 class GoogleSheetAPI:
     def __init__(self):
         self.request_count = 0
@@ -29,11 +30,8 @@ class GoogleSheetAPI:
 
     async def time_limiter_count(self):
         self.request_count += 1
-        if self.request_count % 10 == 0:  # Чекаємо після 10 запитів
-            elapsed = time.time() - self.last_request_time
-            if elapsed < 10:  # Якщо ще не минуло 10 секунд, чекаємо
-                await asyncio.sleep(10 - elapsed)
-            self.last_request_time = time.time()
+        if self.request_count % 5 == 0:  # Чекаємо кожні 5 запитів
+            await asyncio.sleep(10)  # Чекаємо 10 секунд
 
     def authenticate(self):
         creds = None
@@ -68,35 +66,59 @@ class GoogleSheetAPI:
         service = build('sheets', 'v4', credentials=creds)
         existing_sheets = await self.get_sheets(service)
 
+        updates = []
+        formatting_requests = []
+
         for team_data in teams_data:
             sheet_name = team_data['team_name']
             row_count = len(team_data['data'])
 
             sheet_id = existing_sheets.get(sheet_name) or await self.create_sheet(sheet_name, service)
 
-            await self.clear_page(sheet_name, sheet_id, self.SPREADSHEET_ID, service)
+            await self.clear_page(sheet_name, self.SPREADSHEET_ID, service)
             await self.add_formulas(sheet_name, service)
 
             values = self.format_data_for_sheets(team_data['data'])
-            service.spreadsheets().values().update(
-                spreadsheetId=self.SPREADSHEET_ID,
-                range=f'{sheet_name}!A5',
-                valueInputOption="RAW",
-                body={'values': values}
-            ).execute()
+            updates.append({
+                "range": f'{sheet_name}!A5',
+                "values": values
+            })
+            formatting_requests.extend(self.create_formatting_requests(sheet_id, row_count, team_data['data']))
 
-            await self.time_limiter_count()
-            await self.create_table_with_formatting(sheet_id, row_count, service, team_data['data'])
+            # service.spreadsheets().values().update(
+            #     spreadsheetId=self.SPREADSHEET_ID,
+            #     range=f'{sheet_name}!A5',
+            #     valueInputOption="RAW",
+            #     body={'values': values}
+            # ).execute()
 
-            logging.info(f"Updated sheet for {sheet_name} at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+            if updates:
+                await self.batch_update_sheets(updates, service)
 
-    async def clear_page(self, sheet_name, sheet_id, table_id, service):
+            # Виконуємо batchUpdate для форматування
+            if formatting_requests:
+                await self.batch_update_formatting(formatting_requests, service)
+
+            logging.info(f"Updated {len(teams_data)} sheets at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+
+    async def batch_update_sheets(self, updates, service):
+        batch_data = {"valueInputOption": "RAW", "data": updates}
+        service.spreadsheets().values().batchUpdate(
+            spreadsheetId=self.SPREADSHEET_ID, body=batch_data).execute()
+        await self.time_limiter_count()
+
+    async def batch_update_formatting(self, requests, service):
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
+        await self.time_limiter_count()
+
+    async def clear_page(self, sheet_name, table_id, service):
         service.spreadsheets().values().clear(
             spreadsheetId=table_id,
             range=f"{sheet_name}!A1:Z",
             body={}
         ).execute()
-        self.request_count += 1
+        await self.time_limiter_count()
 
     def format_data_for_sheets(self, data):
         if not data:
@@ -134,7 +156,7 @@ class GoogleSheetAPI:
         ).execute()
         await self.time_limiter_count()
 
-    async def create_table_with_formatting(self, sheet_id, row_count, service, data):
+    def create_formatting_requests(self, sheet_id, row_count, data):
         requests = [
             {
                 'repeatCell': {
@@ -159,47 +181,31 @@ class GoogleSheetAPI:
         ]
 
         for i, row in enumerate(data):
-            if row.get('REFUND') not in [None] or row.get('CURRENT STATUS') in ('INACTIVE', 'CLOSED', 'FORCE_CLOSED'):
-                requests.append({
-                    'repeatCell': {
-                        'range': {
-                            'sheetId': sheet_id,
-                            'startRowIndex': 5 + i,
-                            'endRowIndex': 6 + i,
-                            'startColumnIndex': 0,
-                            'endColumnIndex': 6
-                        },
-                        'cell': {
-                            'userEnteredFormat': {'backgroundColor': {'red': 1, 'green': 0.8, 'blue': 0.8}}
-                        },
-                        'fields': 'userEnteredFormat.backgroundColor'
-                    }
-                })
-            else:
-                requests.append({
-                    'repeatCell': {
-                        'range': {
-                            'sheetId': sheet_id,
-                            'startRowIndex': 5 + i,
-                            'endRowIndex': 6 + i,
-                            'startColumnIndex': 0,
-                            'endColumnIndex': 6
-                        },
-                        'cell': {
-                            'userEnteredFormat': {'backgroundColor': {'red': 1, 'green': 1, 'blue': 1}}
-                        },
-                        'fields': 'userEnteredFormat.backgroundColor'
-                    }
-                })
+            color = {'red': 1, 'green': 0.8, 'blue': 0.8} if row.get('REFUND') not in [None] or row.get(
+                'CURRENT STATUS') in ('INACTIVE', 'CLOSED', 'FORCE_CLOSED') else {'red': 1, 'green': 1, 'blue': 1}
 
-        service.spreadsheets().batchUpdate(spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
-        await self.time_limiter_count()
+            requests.append({
+                'repeatCell': {
+                    'range': {
+                        'sheetId': sheet_id,
+                        'startRowIndex': 5 + i,
+                        'endRowIndex': 6 + i,
+                        'startColumnIndex': 0,
+                        'endColumnIndex': 6
+                    },
+                    'cell': {
+                        'userEnteredFormat': {'backgroundColor': color}
+                    },
+                    'fields': 'userEnteredFormat.backgroundColor'
+                }
+            })
+
+        return requests
 
     @staticmethod
     @lru_cache(maxsize=None)
     def get_mcc_by_uuid_cached(mcc_uuid):
         return GoogleAgencyRp().get_mcc_by_uuid(mcc_uuid) or {}
-
 
     def process_transactions(self, sub_transactions, refunded, accounts):
         """
@@ -307,6 +313,5 @@ async def start_google_analitics():
 
     sheet_api = GoogleSheetAPI()
     await sheet_api.update_sheet(formatted_data)
-
 
 # start_google_analitics()

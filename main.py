@@ -172,7 +172,7 @@ if __name__ == '__main__':
     update_all_data()
 
     # google agency analitics
-    asyncio.run(start_google_analitics())
+    start_google_analitics()
 
     # schedule.every().day.do(update_all_data)
     #
