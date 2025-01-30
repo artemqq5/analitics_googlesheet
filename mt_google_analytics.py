@@ -111,7 +111,8 @@ class GoogleSheetAPI:
                 row.get('EMAIL', ''),
                 row.get('AMOUNT', ''),
                 row.get('SPENT', ''),
-                row.get('REFUND', '') if row.get('REFUND') is not None else ''
+                row.get('REFUND', '') if row.get('REFUND') is not None else '',
+                row.get('CURRENT STATUS', '')
             ])
 
         return formatted_data
@@ -156,7 +157,7 @@ class GoogleSheetAPI:
         ]
 
         for i, row in enumerate(data):
-            if row.get('REFUND') not in [None]:
+            if row.get('REFUND') not in [None] or row.get('CURRENT STATUS') in ('INACTIVE', 'CLOSED'):
                 requests.append({
                     'repeatCell': {
                         'range': {
@@ -249,11 +250,12 @@ class GoogleSheetAPI:
 
                 formatted_entry = {
                     'MCC': mcc.get('mcc_name', None),
-                    'DATE': account.get('created', None),
+                    'DATE': account.get('created', ref_account.get('completed_time', ref_account.get('created', None))),
                     'EMAIL': account_api.get('email', None),
                     'AMOUNT': account_api.get('balance', None),
                     'SPENT': account_api.get('spend', None),
-                    'REFUND': refund_value
+                    'REFUND': refund_value,
+                    'CURRENT STATUS': account_api['status']
                 }
 
                 team_data[team_name].append(formatted_entry)
