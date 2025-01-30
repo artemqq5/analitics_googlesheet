@@ -110,13 +110,7 @@ class GoogleSheetAPI:
                         "startRowIndex": 0, "endRowIndex": 1000,  # Очищаємо до 1000 рядків
                         "startColumnIndex": 0, "endColumnIndex": 10  # Очищаємо до 10 колонок
                     },
-                    "fields": "userEnteredValue, userEnteredFormat, textFormatRuns, dataValidation, conditionalFormatRules"
-                }
-            },
-            {
-                "deleteConditionalFormatRule": {
-                    "sheetId": sheet_id,
-                    "index": 0  # Видаляє всі conditionalFormatRules
+                    "fields": "userEnteredValue, userEnteredFormat, textFormatRuns, dataValidation"
                 }
             },
             # Додавання формул
