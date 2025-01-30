@@ -250,7 +250,7 @@ class GoogleSheetAPI:
 
                 formatted_entry = {
                     'MCC': mcc.get('mcc_name', None),
-                    'DATE': account.get('created', ref_account.get('completed_time', ref_account.get('created', None))),
+                    'DATE': account.get('created', None) or ref_account.get('completed_time', None) or ref_account.get('created', None),
                     'EMAIL': account_api.get('email', None),
                     'AMOUNT': account_api.get('balance', None),
                     'SPENT': account_api.get('spend', None),
