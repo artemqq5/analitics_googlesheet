@@ -308,7 +308,7 @@ class GoogleSheetAPI:
                 refund_value = ref_account.get('refund_value', 0) if ref_account else None
                 account = GoogleAgencyRp().get_account_by_uid(transaction['sub_account_uid']) or {}
 
-                if account:
+                if account and account_api['status'] not in ('INACTIVE', 'CLOSED', 'FORCE_CLOSED'):
                     date_created = account.get('created', None)
                 elif ref_account:
                     date_created = ref_account.get('completed_time', None) or ref_account.get('created', None)
