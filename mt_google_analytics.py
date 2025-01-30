@@ -235,7 +235,7 @@ class GoogleSheetAPI:
                     'range': {
                         'sheetId': sheet_id,
                         'startRowIndex': 5 + i,
-                        'endRowIndex': 7 + i,
+                        'endRowIndex': 6 + i,
                         'startColumnIndex': 0,
                         'endColumnIndex': 7
                     },
