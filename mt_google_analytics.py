@@ -161,7 +161,7 @@ class GoogleSheetAPI:
             {
                 'repeatCell': {
                     'range': {'sheetId': sheet_id, 'startRowIndex': 4, 'endRowIndex': 5, 'startColumnIndex': 0,
-                              'endColumnIndex': 6},
+                              'endColumnIndex': 7},
                     'cell': {'userEnteredFormat': {'textFormat': {'bold': True}}},
                     'fields': 'userEnteredFormat.textFormat.bold'
                 }
@@ -169,7 +169,7 @@ class GoogleSheetAPI:
             {
                 'updateBorders': {
                     'range': {'sheetId': sheet_id, 'startRowIndex': 4, 'endRowIndex': 5 + row_count,
-                              'startColumnIndex': 0, 'endColumnIndex': 6},
+                              'startColumnIndex': 0, 'endColumnIndex': 7},
                     'top': {'style': 'SOLID', 'width': 1},
                     'bottom': {'style': 'SOLID', 'width': 1},
                     'left': {'style': 'SOLID', 'width': 1},
@@ -189,9 +189,9 @@ class GoogleSheetAPI:
                     'range': {
                         'sheetId': sheet_id,
                         'startRowIndex': 5 + i,
-                        'endRowIndex': 6 + i,
+                        'endRowIndex': 7 + i,
                         'startColumnIndex': 0,
-                        'endColumnIndex': 6
+                        'endColumnIndex': 7
                     },
                     'cell': {
                         'userEnteredFormat': {'backgroundColor': color}
