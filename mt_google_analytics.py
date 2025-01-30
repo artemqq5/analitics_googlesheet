@@ -68,6 +68,7 @@ class GoogleSheetAPI:
 
         updates = []
         formatting_requests = []
+        batch_clear_and_formulas = []
 
         for team_data in teams_data:
             sheet_name = team_data['team_name']
@@ -75,8 +76,7 @@ class GoogleSheetAPI:
 
             sheet_id = existing_sheets.get(sheet_name) or await self.create_sheet(sheet_name, service)
 
-            await self.clear_page(sheet_name, self.SPREADSHEET_ID, service)
-            await self.add_formulas(sheet_name, service)
+            batch_clear_and_formulas.extend(self.create_clear_and_formulas_requests(sheet_name, sheet_id))
 
             values = self.format_data_for_sheets(team_data['data'])
             updates.append({
@@ -85,6 +85,11 @@ class GoogleSheetAPI:
             })
             formatting_requests.extend(self.create_formatting_requests(sheet_id, row_count, team_data['data']))
 
+        # Виконуємо batchUpdate для очищення і формул
+        if batch_clear_and_formulas:
+            await self.batch_update_clear_and_formulas(batch_clear_and_formulas, service)
+
+        # Виконуємо batchUpdate для запису значень
         if updates:
             await self.batch_update_sheets(updates, service)
 
@@ -94,6 +99,49 @@ class GoogleSheetAPI:
 
         logging.info(f"Updated {len(teams_data)} sheets at {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
+    def create_clear_and_formulas_requests(self, sheet_name, sheet_id):
+        return [
+            # очищенння
+            {
+                "updateCells": {
+                    "range": {
+                        "sheetId": sheet_id,
+                        "startRowIndex": 0, "endRowIndex": 1000,  # Очищаємо до 1000 рядків
+                        "startColumnIndex": 0, "endColumnIndex": 10  # Очищаємо до 10 колонок
+                    },
+                    "fields": "userEnteredValue, userEnteredFormat, textFormatRuns, dataValidation, conditionalFormatRules"
+                }
+            },
+            # Додавання формул
+            {
+                "updateCells": {
+                    "rows": [
+                        {
+                            "values": [
+                                {"userEnteredValue": {"stringValue": "Updated:"}},
+                                {"userEnteredValue": {"stringValue": datetime.now().strftime('%Y-%m-%d %H:%M')}}
+                            ]
+                        },
+                        {
+                            "values": [
+                                {"userEnteredValue": {"stringValue": "Spend:"}},
+                                {"userEnteredValue": {"formulaValue": "=SUM(E6:E)"}}
+                            ]
+                        },
+                        {
+                            "values": [
+                                {"userEnteredValue": {"stringValue": "Accounts:"}},
+                                {"userEnteredValue": {
+                                    "formulaValue": "=SUMPRODUCT((MONTH(B6:B)=MONTH(TODAY()))*(YEAR(B6:B)=YEAR(TODAY())))"}}
+                            ]
+                        }
+                    ],
+                    "start": {"sheetId": sheet_id, "rowIndex": 0, "columnIndex": 0},
+                    "fields": "userEnteredValue"
+                }
+            }
+        ]
+
     async def batch_update_sheets(self, updates, service):
         batch_data = {"valueInputOption": "RAW", "data": updates}
         service.spreadsheets().values().batchUpdate(
@@ -101,6 +149,11 @@ class GoogleSheetAPI:
         await self.time_limiter_count()
 
     async def batch_update_formatting(self, requests, service):
+        service.spreadsheets().batchUpdate(
+            spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
+        await self.time_limiter_count()
+
+    async def batch_update_clear_and_formulas(self, requests, service):
         service.spreadsheets().batchUpdate(
             spreadsheetId=self.SPREADSHEET_ID, body={'requests': requests}).execute()
         await self.time_limiter_count()
