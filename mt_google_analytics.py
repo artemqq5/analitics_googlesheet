@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import os
 import pickle
@@ -343,21 +344,31 @@ async def start_google_analitics():
             reverse=True
         )
 
-    def save_list_to_file(data_list, filename):
-        """
-        Save a list of strings to a text file.
-        Each element of the list will be written as a new line in the file.
-        """
-        try:
-            with open(filename, 'w', encoding='utf-8') as file:
-                file.write(f"{data_list}\n")
-            print(f"List successfully saved to {filename}")
-        except Exception as e:
-            print(f"An error occurred while saving the list to file: {e}")
+    save_list_to_file(formatted_data, f'temp/data_{datetime.now().strftime("%Y-%m-%d")}.json')
 
-    save_list_to_file(formatted_data, f'temp/data_{datetime.now().strftime("%Y-%m-%d %H:%M")}.txt')
+    # formatted_data = load_list_from_file(f'temp/data_2025-30-01.json')
 
     sheet_api = GoogleSheetAPI()
     await sheet_api.update_sheet(formatted_data)
 
+
 # start_google_analitics()
+def save_list_to_file(data_list, filename):
+    """Зберігає список у JSON-файл."""
+    try:
+        with open(filename, 'w', encoding='utf-8') as file:
+            json.dump(data_list, file, ensure_ascii=False, indent=4)
+        print(f"List successfully saved to {filename}")
+    except Exception as e:
+        print(f"An error occurred while saving the list to file: {e}")
+
+
+def load_list_from_file(filename):
+    """Завантажує список з JSON-файлу, якщо він існує."""
+    try:
+        if os.path.exists(filename):
+            with open(filename, 'r', encoding='utf-8') as file:
+                return json.load(file)
+    except Exception as e:
+        print(f"An error occurred while loading the list from file: {e}")
+    return None
