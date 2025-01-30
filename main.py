@@ -1,3 +1,4 @@
+import asyncio
 import os
 import pickle
 from datetime import datetime
@@ -171,7 +172,7 @@ if __name__ == '__main__':
     update_all_data()
 
     # google agency analitics
-    start_google_analitics()
+    asyncio.run(start_google_analitics())
 
     # schedule.every().day.do(update_all_data)
     #

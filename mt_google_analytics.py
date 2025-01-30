@@ -2,7 +2,9 @@ import asyncio
 import logging
 import os
 import pickle
+import time
 from datetime import datetime
+from functools import lru_cache
 
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -16,12 +18,10 @@ from private_cfg import MCC_ID, MCC_TOKEN
 # Настроим логирование
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-request_count = 0  # Добавлено для отслеживания количества запросов
-
-
 class GoogleSheetAPI:
     def __init__(self):
         self.request_count = 0
+        self.last_request_time = time.time()
         self.SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
         self.TOKEN_FILENAME = 'token.pickle'
         self.CREDS_FILENAME = 'credential.json'
@@ -29,9 +29,11 @@ class GoogleSheetAPI:
 
     async def time_limiter_count(self):
         self.request_count += 1
-
-        if self.request_count % 1 == 0:
-            await asyncio.sleep(5)
+        if self.request_count % 10 == 0:  # Чекаємо після 10 запитів
+            elapsed = time.time() - self.last_request_time
+            if elapsed < 10:  # Якщо ще не минуло 10 секунд, чекаємо
+                await asyncio.sleep(10 - elapsed)
+            self.last_request_time = time.time()
 
     def authenticate(self):
         creds = None
@@ -100,7 +102,7 @@ class GoogleSheetAPI:
         if not data:
             return []
 
-        headers = ['MCC', 'DATE', 'EMAIL', 'AMOUNT', 'SPENT', 'REFUND']
+        headers = ['MCC', 'DATE', 'EMAIL', 'AMOUNT', 'SPEND', 'REFUND', 'CURRENT STATUS']
         formatted_data = [headers]
 
         for row in data:
@@ -110,7 +112,7 @@ class GoogleSheetAPI:
                                                                                                                ''),
                 row.get('EMAIL', ''),
                 row.get('AMOUNT', ''),
-                row.get('SPENT', ''),
+                row.get('SPEND', ''),
                 row.get('REFUND', '') if row.get('REFUND') is not None else '',
                 row.get('CURRENT STATUS', '')
             ])
@@ -157,7 +159,7 @@ class GoogleSheetAPI:
         ]
 
         for i, row in enumerate(data):
-            if row.get('REFUND') not in [None] or row.get('CURRENT STATUS') in ('INACTIVE', 'CLOSED'):
+            if row.get('REFUND') not in [None] or row.get('CURRENT STATUS') in ('INACTIVE', 'CLOSED', 'FORCE_CLOSED'):
                 requests.append({
                     'repeatCell': {
                         'range': {
@@ -194,7 +196,12 @@ class GoogleSheetAPI:
         await self.time_limiter_count()
 
     @staticmethod
-    def process_transactions(sub_transactions, refunded, accounts):
+    @lru_cache(maxsize=None)
+    def get_mcc_by_uuid_cached(mcc_uuid):
+        return GoogleAgencyRp().get_mcc_by_uuid(mcc_uuid) or {}
+
+
+    def process_transactions(self, sub_transactions, refunded, accounts):
         """
         Обрабатывает данные из двух списков, объединяя их в нужный формат.
         """
@@ -243,7 +250,7 @@ class GoogleSheetAPI:
 
                 account_api = account_api_response.get('accounts', [{}])[0]
 
-                mcc = GoogleAgencyRp().get_mcc_by_uuid(transaction['mcc_uuid']) or {}
+                mcc = self.get_mcc_by_uuid_cached(transaction['mcc_uuid'])
                 ref_account = GoogleAgencyRp().get_refunded_account_by_uid(transaction['sub_account_uid'])
                 refund_value = ref_account.get('refund_value', 0) if ref_account else None
                 account = GoogleAgencyRp().get_account_by_uid(transaction['sub_account_uid']) or {}
@@ -260,7 +267,7 @@ class GoogleSheetAPI:
                     'DATE': date_created,
                     'EMAIL': account_api.get('email', None),
                     'AMOUNT': account_api.get('balance', None),
-                    'SPENT': account_api.get('spend', None),
+                    'SPEND': account_api.get('spend', None),
                     'REFUND': refund_value,
                     'CURRENT STATUS': account_api['status']
                 }
@@ -272,7 +279,7 @@ class GoogleSheetAPI:
         return [{'team_name': team, 'data': data} for team, data in team_data.items()]
 
 
-def start_google_analitics():
+async def start_google_analitics():
     sub_transactions = GoogleAgencyRp().get_account_transactions()
     refunded = GoogleAgencyRp().get_refunded_accounts()
     accounts = GoogleAgencyRp().get_accounts_with_team()
@@ -299,6 +306,7 @@ def start_google_analitics():
     save_list_to_file(formatted_data, f'temp/data_{datetime.now().strftime("%Y-%m-%d %H:%M")}.txt')
 
     sheet_api = GoogleSheetAPI()
-    asyncio.run(sheet_api.update_sheet(formatted_data))
+    await sheet_api.update_sheet(formatted_data)
+
 
 # start_google_analitics()
