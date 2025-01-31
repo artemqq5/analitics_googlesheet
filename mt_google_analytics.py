@@ -315,12 +315,17 @@ class GoogleSheetAPI:
                 else:
                     date_created = None
 
+                if account_api.get('spend', 0) == 0:
+                    spend_account = ref_account.get('last_spend', 0)
+                else:
+                    spend_account = account_api.get('spend', 0)
+
                 formatted_entry = {
                     'MCC': mcc.get('mcc_name', None),
                     'DATE': date_created,
                     'EMAIL': account_api.get('email', None),
                     'AMOUNT': account_api.get('balance', None),
-                    'SPEND': account_api.get('spend', None),
+                    'SPEND': spend_account,
                     'REFUND': refund_value,
                     'CURRENT STATUS': account_api['status']
                 }
