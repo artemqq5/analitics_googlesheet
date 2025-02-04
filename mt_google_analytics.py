@@ -315,7 +315,7 @@ class GoogleSheetAPI:
                 else:
                     date_created = None
 
-                if account_api.get('spend', 0) == 0:
+                if account_api.get('spend', 0) == 0 and ref_account:
                     spend_account = ref_account.get('last_spend', 0)
                 else:
                     spend_account = account_api.get('spend', 0)
