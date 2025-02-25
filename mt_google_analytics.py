@@ -171,11 +171,12 @@ class GoogleSheetAPI:
         if not data:
             return []
 
-        headers = ['MCC', 'DATE', 'EMAIL', 'AMOUNT', 'SPEND', 'REFUND', 'CURRENT STATUS']
+        headers = ['ID', 'MCC', 'DATE', 'EMAIL', 'AMOUNT', 'SPEND', 'REFUND', 'CURRENT STATUS']
         formatted_data = [headers]
 
         for row in data:
             formatted_data.append([
+                row.get('ID', ''),
                 row.get('MCC', ''),
                 row.get('DATE', '').strftime("%Y-%m-%d") if isinstance(row.get('DATE'), datetime) else row.get('DATE',
                                                                                                                ''),
@@ -208,7 +209,7 @@ class GoogleSheetAPI:
             {
                 'repeatCell': {
                     'range': {'sheetId': sheet_id, 'startRowIndex': 4, 'endRowIndex': 5, 'startColumnIndex': 0,
-                              'endColumnIndex': 7},
+                              'endColumnIndex': 8},
                     'cell': {'userEnteredFormat': {'textFormat': {'bold': True}}},
                     'fields': 'userEnteredFormat.textFormat.bold'
                 }
@@ -216,7 +217,7 @@ class GoogleSheetAPI:
             {
                 'updateBorders': {
                     'range': {'sheetId': sheet_id, 'startRowIndex': 4, 'endRowIndex': 5 + row_count,
-                              'startColumnIndex': 0, 'endColumnIndex': 7},
+                              'startColumnIndex': 0, 'endColumnIndex': 8},
                     'top': {'style': 'SOLID', 'width': 1},
                     'bottom': {'style': 'SOLID', 'width': 1},
                     'left': {'style': 'SOLID', 'width': 1},
@@ -238,7 +239,7 @@ class GoogleSheetAPI:
                         'startRowIndex': 5 + i,
                         'endRowIndex': 6 + i,
                         'startColumnIndex': 0,
-                        'endColumnIndex': 7
+                        'endColumnIndex': 8
                     },
                     'cell': {
                         'userEnteredFormat': {'backgroundColor': color}
@@ -321,6 +322,7 @@ class GoogleSheetAPI:
                     spend_account = account_api.get('spend', 0)
 
                 formatted_entry = {
+                    'ID': account_api.get('customer_id') or "N/A",
                     'MCC': mcc.get('mcc_name', None),
                     'DATE': date_created,
                     'EMAIL': account_api.get('email', None),
