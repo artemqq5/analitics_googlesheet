@@ -126,14 +126,14 @@ class GoogleSheetAPI:
                         {
                             "values": [
                                 {"userEnteredValue": {"stringValue": "Spend:"}},
-                                {"userEnteredValue": {"formulaValue": "=SUM(E6:E)"}}
+                                {"userEnteredValue": {"formulaValue": "=SUM(F6:F)"}}
                             ]
                         },
                         {
                             "values": [
                                 {"userEnteredValue": {"stringValue": "Accounts:"}},
                                 {"userEnteredValue": {
-                                    "formulaValue": "=SUMPRODUCT((MONTH(B6:B)=MONTH(TODAY()))*(YEAR(B6:B)=YEAR(TODAY())))"}}
+                                    "formulaValue": "=SUMPRODUCT((MONTH(C6:C)=MONTH(TODAY()))*(YEAR(C6:C)=YEAR(TODAY())))"}}
                             ]
                         }
                     ],
@@ -192,8 +192,8 @@ class GoogleSheetAPI:
     async def add_formulas(self, sheet_name, service):
         values = [
             ["Updated:", datetime.now().strftime('%Y-%m-%d %H:%M')],
-            ["Spend:", "=SUM(E6:E)"],
-            ["Accounts:", "=SUMPRODUCT((MONTH(B6:B)=MONTH(TODAY()))*(YEAR(B6:B)=YEAR(TODAY())))"]
+            ["Spend:", "=SUM(F6:F)"],
+            ["Accounts:", "=SUMPRODUCT((MONTH(C6:C)=MONTH(TODAY()))*(YEAR(C6:C)=YEAR(TODAY())))"]
         ]
 
         service.spreadsheets().values().update(
