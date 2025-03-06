@@ -363,18 +363,33 @@ async def start_google_analitics():
 # start_google_analitics()
 
 def save_list_to_file(data_list, filename):
-    """Зберігає список у JSON-файл (перетворюючи datetime в строку)."""
+    """Сохраняет список в JSON (конвертируя datetime и Decimal в строку/число)."""
     try:
-        def convert_datetime(obj):
+        def convert_json(obj):
             if isinstance(obj, datetime):
-                return obj.strftime("%Y-%m-%d %H:%M:%S")  # Формат дати як рядок
+                return obj.strftime("%Y-%m-%d %H:%M:%S")  # 🕒 Преобразуем datetime в строку
+            if isinstance(obj, Decimal):
+                return float(obj)  # 🔢 Преобразуем Decimal в float
             return obj
 
+        # 🛠 Проверяем, что data_list — это список
+        if not isinstance(data_list, list):
+            print(f"❌ Ошибка: Перед сохранением {filename} данные имеют тип {type(data_list)}, а не list!")
+            return
+
+        # 🛠 Проверяем, что список не пустой
+        if not data_list:
+            print(f"⚠️ Внимание: список данных пуст, {filename} может быть повреждён!")
+
+        # 🔥 Исправляем циклические ссылки
+        data_list = json.loads(json.dumps(data_list, default=convert_json))
+
         with open(filename, 'w', encoding='utf-8') as file:
-            json.dump(data_list, file, ensure_ascii=False, indent=4, default=convert_datetime)
-        print(f"List successfully saved to {filename}")
+            json.dump(data_list, file, ensure_ascii=False, indent=4, default=convert_json)
+        print(f"✅ JSON успешно сохранён в {filename}")
+
     except Exception as e:
-        print(f"An error occurred while saving the list to file: {e}")
+        print(f"❌ Ошибка при сохранении {filename}: {e}")
 
 
 def load_list_from_file(filename):
