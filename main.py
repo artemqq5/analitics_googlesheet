@@ -1,6 +1,7 @@
 import asyncio
 import os
 import pickle
+from _decimal import Decimal
 from datetime import datetime
 
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -121,6 +122,10 @@ def format_data_for_sheets(data):
             # Якщо значення є datetime, перетворюємо його у строку
             if isinstance(value, datetime):
                 value = value.strftime("%Y-%m-%d %H:%M")
+
+            if isinstance(value, Decimal):
+                value = float(value)
+
             formatted_row.append(value)
         formatted_data.append(formatted_row)
 

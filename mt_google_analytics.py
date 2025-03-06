@@ -4,6 +4,7 @@ import logging
 import os
 import pickle
 import time
+from _decimal import Decimal
 from datetime import datetime
 from functools import lru_cache
 
@@ -181,9 +182,9 @@ class GoogleSheetAPI:
                 row.get('DATE', '').strftime("%Y-%m-%d") if isinstance(row.get('DATE'), datetime) else row.get('DATE',
                                                                                                                ''),
                 row.get('EMAIL', ''),
-                row.get('AMOUNT', ''),
-                row.get('SPEND', ''),
-                row.get('REFUND', '') if row.get('REFUND') is not None else '',
+                float(row.get('AMOUNT', 0)) if isinstance(row.get('AMOUNT'), Decimal) else row.get('AMOUNT', 0),
+                float(row.get('SPEND', 0)) if isinstance(row.get('SPEND'), Decimal) else row.get('SPEND', 0),
+                float(row.get('REFUND', 0)) if isinstance(row.get('REFUND'), Decimal) else row.get('REFUND', 0),
                 row.get('CURRENT STATUS', '')
             ])
 
