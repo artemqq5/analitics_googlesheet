@@ -1,9 +1,10 @@
 import asyncio
+import logging
 import os
 import pickle
-from _decimal import Decimal
 from datetime import datetime
 
+from _decimal import Decimal
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
@@ -12,7 +13,8 @@ from databases.repository.AutoModeratorRp import AutoModeratorRp
 from databases.repository.GoogleAgencyRp import GoogleAgencyRp
 from databases.repository.ShopRp import ShopRp
 from databases.repository.TeamInfoMessagingRp import TeamInfoMessagingRp
-from mt_google_analytics import start_google_analitics
+from domain.mt_google.google_ref_trans import GoogleSheetUploaderLimited
+from domain.mt_google.mt_google_analytics import start_google_analitics
 from private_cfg import *
 
 # mt shop
@@ -48,11 +50,16 @@ apps_apps_rent = "Apps!A1"
 google_taxes = "Taxes!A1"
 google_teams = "Teams!A1"
 google_accounts = "Accounts!A1"
-google_refunded_accounts = "Refunded Accounts!A1"
 google_mcc = "MCC!A1"
 google_balances = "Balances!A1"
-google_account_transactions = "Account Transactions!A1"
-google_mcc_transactions = "MCC Transactions!A1"
+# google agency 2
+google_refunded_accounts = "Refunds"
+google_account_transactions = "Account Transactions"
+google_mcc_transactions = "MCC Transactions"
+
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.getLogger('googleapiclient.discovery_cache').setLevel(logging.ERROR)
 
 
 def clear_range(range_name, table_id, service):
@@ -64,7 +71,6 @@ def clear_range(range_name, table_id, service):
 
 
 def update_google_sheets_(data, range_name, table_id):
-
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
 
     # Шлях до файлу облікових даних
@@ -140,31 +146,49 @@ def update_all_data():
     update_google_sheets_(format_data_for_sheets(ShopRp().get_categories_data()), categories_shop, SPREADSHEET_SHOP_ID)
 
     # update mt team info
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('creo')), chats_creo, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('google')), chats_google, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('fb')), chats_fb, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('console')), chats_console, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('agency_fb')), chats_agency_fb, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('agency_google')), chats_agency_google, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('apps')), chats_apps, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('pp_web')), chats_pp_web, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('pp_ads')), chats_pp_ads, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('media')), chats_media, SPREADSHEET_TEAM_INFO_ID)
-    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_users_from_info_bot()), users_info, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('creo')), chats_creo,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('google')), chats_google,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('fb')), chats_fb,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('console')), chats_console,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('agency_fb')), chats_agency_fb,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('agency_google')),
+                          chats_agency_google, SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('apps')), chats_apps,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('pp_web')), chats_pp_web,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('pp_ads')), chats_pp_ads,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_chat_data('media')), chats_media,
+                          SPREADSHEET_TEAM_INFO_ID)
+    update_google_sheets_(format_data_for_sheets(TeamInfoMessagingRp().get_users_from_info_bot()), users_info,
+                          SPREADSHEET_TEAM_INFO_ID)
 
     # update auto moderator
-    update_google_sheets_(format_data_for_sheets(AutoModeratorRp().get_all_users()), users_auto_moder, SPREADSHEET_AUTO_MODERATOR_ID)
+    update_google_sheets_(format_data_for_sheets(AutoModeratorRp().get_all_users()), users_auto_moder,
+                          SPREADSHEET_AUTO_MODERATOR_ID)
 
     # update apps rent
-    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_users()), users_apps_rent, SPREADSHEET_APPS_RENT_ID)
-    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_teams()), teams_apps_rent, SPREADSHEET_APPS_RENT_ID)
-    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_flows()), flows_apps_rent, SPREADSHEET_APPS_RENT_ID)
-    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_domains()), domains_apps_rent, SPREADSHEET_APPS_RENT_ID)
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_users()), users_apps_rent,
+                          SPREADSHEET_APPS_RENT_ID)
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_teams()), teams_apps_rent,
+                          SPREADSHEET_APPS_RENT_ID)
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_flows()), flows_apps_rent,
+                          SPREADSHEET_APPS_RENT_ID)
+    update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_domains()), domains_apps_rent,
+                          SPREADSHEET_APPS_RENT_ID)
     update_google_sheets_(format_data_for_sheets(AppsRentRp().get_all_apps()), apps_apps_rent, SPREADSHEET_APPS_RENT_ID)
 
     # update google agency
-    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_taxes_transactions()), google_taxes, SPREADSHEET_GOOGLE_AGENCY_ID)
-    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_accounts()), google_accounts, SPREADSHEET_GOOGLE_AGENCY_ID)
+    update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_taxes_transactions()), google_taxes,
+                          SPREADSHEET_GOOGLE_AGENCY_ID)
+    # update google agency 2
+    # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_refunded_accounts()), google_accounts, SPREADSHEET_GOOGLE_AGENCY_ID)
     # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_refunded_accounts()), google_refunded_accounts, SPREADSHEET_GOOGLE_AGENCY_ID)
     # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_teams()), google_teams, SPREADSHEET_GOOGLE_AGENCY_ID)
     # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_mcc()), google_mcc, SPREADSHEET_GOOGLE_AGENCY_ID)
@@ -173,15 +197,22 @@ def update_all_data():
     # update_google_sheets_(format_data_for_sheets(GoogleAgencyRp().get_mcc_transactions()), google_mcc_transactions, SPREADSHEET_GOOGLE_AGENCY_ID)
 
 
-if __name__ == '__main__':
+async def main():
+    uploader = GoogleSheetUploaderLimited()
+
+    # all data raw database
     update_all_data()
 
-    # google agency analitics
-    asyncio.run(start_google_analitics())
+    # teams statistic
+    await start_google_analitics()
 
-    # schedule.every().day.do(update_all_data)
-    #
-    # while True:
-    #     schedule.run_pending()
-    #     time.sleep(1)
+    # mcc transactions
+    await uploader.process_and_upload_mcc_transactions(sheet_name=google_mcc_transactions)
+    # account transactions
+    await uploader.process_and_upload_accounts_transactions(sheet_name=google_account_transactions)
+    # refunds
+    await uploader.process_and_upload_refunds(sheet_name=google_refunded_accounts)
 
+
+if __name__ == '__main__':
+    asyncio.run(main())

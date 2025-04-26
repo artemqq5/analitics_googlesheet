@@ -26,8 +26,8 @@ class GoogleSheetAPI:
         self.request_count = 0
         self.last_request_time = time.time()
         self.SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-        self.TOKEN_FILENAME = 'token.pickle'
-        self.CREDS_FILENAME = 'credential.json'
+        self.TOKEN_FILENAME = '../../token.pickle'
+        self.CREDS_FILENAME = '../../credential.json'
         self.SPREADSHEET_ID = '1g0SNORP1BpENLKOcmmZRV0MZgJeQmr5ooNXz_15MhRE'
 
     async def time_limiter_count(self):
