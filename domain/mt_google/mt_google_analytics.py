@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from YeezyAPI import YeezyAPI
 from databases.repository.GoogleAgencyRp import GoogleAgencyRp
-from private_cfg import MCC_ID, MCC_TOKEN
+from private_cfg import MCC_ID, MCC_TOKEN, SPREADSHEET_GOOGLE_AGENCY_ID
 
 # Настроим логирование
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -26,9 +26,9 @@ class GoogleSheetAPI:
         self.request_count = 0
         self.last_request_time = time.time()
         self.SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-        self.TOKEN_FILENAME = '../../token.pickle'
-        self.CREDS_FILENAME = '../../credential.json'
-        self.SPREADSHEET_ID = '1g0SNORP1BpENLKOcmmZRV0MZgJeQmr5ooNXz_15MhRE'
+        self.TOKEN_FILENAME = 'token.pickle'
+        self.CREDS_FILENAME = 'credential.json'
+        self.SPREADSHEET_ID = SPREADSHEET_GOOGLE_AGENCY_ID
 
     async def time_limiter_count(self):
         self.request_count += 1
